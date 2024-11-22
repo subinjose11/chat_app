@@ -6,10 +6,8 @@ class Strings {
 }
 
 class Drawables {
-  static const String aiChatLogo = 'ai_chat_logo';
-  static const String aiChatLogoGrey = 'ai_chat_logo_grey';
-  static const String error = 'error';
-  static const String aiSticker = 'ai_sticker';
+  static const String landingBg = 'assets/drawables/bg.png';
+
 }
 
 class AppIcons {
