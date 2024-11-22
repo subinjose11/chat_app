@@ -6,11 +6,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// Ensure this is initialized once and reused
+final _appRouter = AppRouter();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
- await Firebase.initializeApp(
-  options: DefaultFirebaseOptions.currentPlatform
- );
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   runApp(const ProviderScope(child: MyApp()));
 }
@@ -23,14 +26,14 @@ class MyApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'Chat App',
       debugShowCheckedModeBanner: false,
-      theme: lightTheme,
-      darkTheme: darkTheme,
+      theme: lightTheme, // Replace with your custom light theme
+      darkTheme: darkTheme, // Replace with your custom dark theme
       themeMode: ThemeMode.system, // Automatically switches based on system theme
       routerDelegate: AutoRouterDelegate(
-        AppRouter(), // Initialize your router
+        _appRouter,
         navigatorObservers: () => [AutoRouteObserver()],
       ),
-      routeInformationParser: AppRouter().defaultRouteParser(), // Parse the route info
+      routeInformationParser: _appRouter.defaultRouteParser(), // Parse route info
     );
   }
 }
