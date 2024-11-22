@@ -12,20 +12,18 @@ class BottomNavBar extends ConsumerWidget {
 
     return BottomNavigationBar(
       currentIndex: pageIndex,
-      selectedItemColor: Colors.blue,
-      unselectedItemColor: Colors.white,
-      backgroundColor: Colors.black,
+      elevation:20 ,
       onTap: (index) {
         ref.read(navIndexProvider.notifier).state = index;
       },
       items: const <BottomNavigationBarItem>[
         BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Chat',
+          icon: Icon(Icons.chat),
+          label: 'Chats',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.settings),
-          label: 'Settings',
+          icon: Icon(Icons.video_call_outlined),
+          label: 'Status',
         ),
       ],
     );
