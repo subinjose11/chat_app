@@ -1,5 +1,6 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:chat_app/core/theme/app_theme.dart';
-import 'package:chat_app/feature/home/presentation/ui/home.dart';
+import 'package:chat_app/routes/app_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,14 +13,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'Chat App',
       debugShowCheckedModeBanner: false,
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: ThemeMode.system, // Automatically switches based on system theme
-      home: const HomePage(),
+      routerDelegate: AutoRouterDelegate(
+        AppRouter(), // Initialize your router
+        navigatorObservers: () => [AutoRouteObserver()],
+      ),
+      routeInformationParser: AppRouter().defaultRouteParser(), // Parse the route info
     );
   }
 }
-
