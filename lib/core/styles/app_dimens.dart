@@ -2,8 +2,6 @@ import 'package:flutter/cupertino.dart';
 
 class Dimensions {
   static const double screenBorder = 24;
-  static const double dimenHeight32 = 32;
-  static const double dimenHeight16 = 16;
 }
 
 var dimenHeight4 = const SizedBox(
