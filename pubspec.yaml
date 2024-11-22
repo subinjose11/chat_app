@@ -27,7 +27,6 @@ flutter:
     - assets/drawables/
     - assets/icons/
     - assets/flags/
-    - assets/env/
 
   fonts:
     - family: Axiforma
