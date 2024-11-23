@@ -2,19 +2,18 @@ import 'package:auto_route/auto_route.dart';
 import 'package:chat_app/core/utils/utils.dart';
 import 'package:chat_app/core/widget/custom_button.dart';
 import 'package:chat_app/feature/auth/presentation/controller/auth_controller.dart';
-import 'package:chat_app/routes/app_route.gr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 @RoutePage()
-class LogInPage extends ConsumerStatefulWidget {
-  const LogInPage({super.key});
+class SignUpPage extends ConsumerStatefulWidget{
+  const SignUpPage({super.key});
 
   @override
-  ConsumerState<LogInPage> createState() => _LogInPageState();
+  ConsumerState<SignUpPage> createState() => _SignUpPageState();
 }
 
-class _LogInPageState extends ConsumerState<LogInPage> {
+class _SignUpPageState extends ConsumerState<SignUpPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -24,31 +23,31 @@ class _LogInPageState extends ConsumerState<LogInPage> {
     _emailController.dispose();
     _passwordController.dispose();
   }
-
-  void logIn() {
+   void signUp() {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     if (email.isNotEmpty && password.isNotEmpty) {
       ref
           .read(authControllerProvider)
-          .signInWithEmail(context, email, password);
+          .registerWithEmail(context, email, password);
     } else {
       showSnackBar(context: context, content: 'Fill out all the fields');
     }
   }
-
-  @override
   Widget build(BuildContext context) {
+
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            children: [
-              const Text('Log in to Chat app with your email id'),
-              const SizedBox(height: 10),
-              const SizedBox(height: 5),
-              TextField(
+      appBar: AppBar(
+        
+        elevation: 0,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            const Text('Create a account with your email id'),
+            TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(
@@ -65,22 +64,12 @@ class _LogInPageState extends ConsumerState<LogInPage> {
                 width: 90,
                 child: CustomButton(
                   onPressed: () {
-                    logIn();
+                   signUp();
                   },
-                  text: 'Log In',
+                  text: 'Register',
                 ),
               ),
-              SizedBox(
-                width: 90,
-                child: CustomButton(
-                  onPressed: () {
-                 context.router.push(const SignUpRoute());
-                  },
-                  text: 'sign up',
-                ),
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     );
