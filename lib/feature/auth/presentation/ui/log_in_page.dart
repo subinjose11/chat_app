@@ -1,6 +1,9 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:chat_app/core/styles/app_strings.dart';
+import 'package:chat_app/core/styles/text_styles.dart';
 import 'package:chat_app/core/utils/utils.dart';
 import 'package:chat_app/core/widget/custom_button.dart';
+import 'package:chat_app/core/widget/custom_text_field.dart';
 import 'package:chat_app/feature/auth/presentation/controller/auth_controller.dart';
 import 'package:chat_app/routes/app_route.gr.dart';
 import 'package:flutter/material.dart';
@@ -42,27 +45,34 @@ class _LogInPageState extends ConsumerState<LogInPage> {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              const Text('Log in to Chat app with your email id'),
-              const SizedBox(height: 10),
-              const SizedBox(height: 5),
-              TextField(
+              const SizedBox(height: 16),
+              Image.asset(Drawables.appLogo, height: 50),
+              const SizedBox(height: 16),
+              Text('Welcome Back!', style: heading01),
+              const SizedBox(height: 8),
+              Text(
+                'Log in to Chat App with your email',
+                style: subText14SB,
+              ),
+              const SizedBox(height: 24),
+              CustomTextField(
                 controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  hintText: 'Email id',
-                ),
+                hintText: "Email address",
+                prefixIcon: const Icon(Icons.mail_outline_rounded),
               ),
-              TextField(
+              const SizedBox(height: 16),
+              CustomTextField(
                 controller: _passwordController,
-                decoration: const InputDecoration(hintText: 'password'),
-                obscureText: true,
+                hintText: "Password",
+                isPasswordField: true,
+                prefixIcon: const Icon(Icons.lock_outline),
               ),
-              const Spacer(),
+              const SizedBox(height: 24),
               SizedBox(
-                width: 90,
+                width: double.infinity,
                 child: CustomButton(
                   onPressed: () {
                     logIn();
@@ -70,15 +80,43 @@ class _LogInPageState extends ConsumerState<LogInPage> {
                   text: 'Log In',
                 ),
               ),
-              SizedBox(
-                width: 90,
-                child: CustomButton(
-                  onPressed: () {
-                 context.router.push(const SignUpRoute());
-                  },
-                  text: 'sign up',
-                ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Expanded(
+                    child: Divider(
+                      thickness: 1,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Text("or", style: subText14SB),
+                  ),
+                  const Expanded(
+                    child: Divider(
+                      thickness: 1,
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 16),
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Text(
+                  'Dont have an account?',
+                  style: subText14M,
+                ),
+                GestureDetector(
+                  onTap: () {
+                    context.router.push(const SignUpRoute());
+                    _emailController.clear();
+                    _passwordController.clear();
+                  },
+                  child: Text(
+                    'Sign up',
+                    style: heading04,
+                  ),
+                ),
+              ])
             ],
           ),
         ),

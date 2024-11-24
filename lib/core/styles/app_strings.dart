@@ -8,6 +8,8 @@ class Strings {
 class Drawables {
   static const String landingBg = 'assets/drawables/bg.png';
   static const String noDp = 'assets/drawables/no_dp.png';
+  static const String appLogo = 'assets/drawables/app_logo.png';
+  static const String appLogo1 = 'assets/drawables/app_logo_1.png';
 
 }
 
