@@ -7,6 +7,7 @@ class Strings {
 
 class Drawables {
   static const String landingBg = 'assets/drawables/bg.png';
+  static const String noDp = 'assets/drawables/no_dp.png';
 
 }
 
