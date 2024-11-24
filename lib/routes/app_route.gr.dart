@@ -14,9 +14,9 @@ import 'package:chat_app/feature/auth/presentation/ui/sign_up_page.dart' as _i4;
 import 'package:chat_app/feature/auth/presentation/ui/user_info_page.dart'
     as _i6;
 import 'package:chat_app/feature/home/presentation/ui/home.dart' as _i1;
-import 'package:chat_app/feature/landing/presentation/ui/landing_screen.dart'
+import 'package:chat_app/feature/splash/presentation/ui/landing_screen.dart'
     as _i2;
-import 'package:chat_app/feature/landing/presentation/ui/splash_screen.dart'
+import 'package:chat_app/feature/splash/presentation/ui/splash_screen.dart'
     as _i5;
 
 abstract class $AppRouter extends _i7.RootStackRouter {
