@@ -1,4 +1,4 @@
-import 'package:chat_app/feature/auth/domain/repository/auth_repository.dart';
+import 'package:chat_app/feature/auth/data/repository/auth_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
