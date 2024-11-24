@@ -4,6 +4,7 @@ import 'dart:developer';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:chat_app/core/utils/utils.dart';
+import 'package:chat_app/feature/auth/data/model/user_model.dart';
 import 'package:chat_app/routes/app_route.gr.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -50,6 +51,23 @@ class AuthRepository {
         showSnackBar(
             content: 'Login failed. Please try again.', context: context);
       }
+    } on AuthException catch (e) {
+      log(e.message);
+      showSnackBar(content: e.message, context: context);
+    } catch (e) {
+      log(e.toString());
+      showSnackBar(content: e.toString(), context: context);
+    }
+  }
+
+  void addUserDetails(BuildContext context, UserModel userDetails) async {
+    final userId = Supabase.instance.client.auth.currentUser!.id;
+    userDetails = userDetails.copyWith(id: userId);
+    log(userDetails.toJson().toString());
+    try {
+          await Supabase.instance.client.from('profiles').upsert(userDetails.toJson());
+        context.router.replaceAll([const HomeRoute()]);
+    
     } on AuthException catch (e) {
       log(e.message);
       showSnackBar(content: e.message, context: context);
