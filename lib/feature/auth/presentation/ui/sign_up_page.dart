@@ -4,6 +4,7 @@ import 'package:chat_app/core/utils/utils.dart';
 import 'package:chat_app/core/widget/custom_button.dart';
 import 'package:chat_app/core/widget/custom_text_field.dart';
 import 'package:chat_app/feature/auth/presentation/controller/auth_controller.dart';
+import 'package:chat_app/routes/app_route.gr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -36,11 +37,11 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
       showSnackBar(context: context, content: 'Fill out all the fields');
     }
   }
-  Widget build(BuildContext context) {
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        
         elevation: 0,
       ),
       body: Padding(
@@ -64,7 +65,24 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                 prefixIcon: const Icon(Icons.lock_outline),
               ),
               const SizedBox(height: 24),
-              const Spacer(),
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Text(
+                  'Already have an account?',
+                  style: subText14M,
+                ),
+                GestureDetector(
+                  onTap: () {
+                    context.router.replace(const LogInRoute());
+                    _emailController.clear();
+                    _passwordController.clear();
+                  },
+                  child: Text(
+                    'Login',
+                    style: heading04,
+                  ),
+                ),
+              ]),
+            const Spacer(),
               SizedBox(
                 width: double.infinity,
                 child: CustomButton(

@@ -107,7 +107,7 @@ class _LogInPageState extends ConsumerState<LogInPage> {
                 ),
                 GestureDetector(
                   onTap: () {
-                    context.router.push(const SignUpRoute());
+                    context.router.replace(const SignUpRoute());
                     _emailController.clear();
                     _passwordController.clear();
                   },

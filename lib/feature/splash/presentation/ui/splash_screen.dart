@@ -2,6 +2,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:chat_app/core/styles/app_strings.dart';
 import 'package:chat_app/core/styles/text_styles.dart';
+import 'package:chat_app/local/shared_prefs_storage_service.dart';
 import 'package:chat_app/routes/app_route.gr.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -23,14 +24,19 @@ class SplashPageState extends State<SplashPage> {
 
   Future<void> _redirect() async {
     // await for for the widget to mount
-    //await Future.delayed(Duration.zero);
     await Future.delayed(const Duration(seconds: 2));
-
-    final session = Supabase.instance.client.auth.currentSession;
-    if (session == null) {
-      context.replaceRoute(const LogInRoute());
+    await SharedPreferencesHelper.init();
+    final isFirstLogin =
+        await SharedPreferencesHelper.getBool("firstLogin") ?? false;
+    if (isFirstLogin) {
+      final session = Supabase.instance.client.auth.currentSession;
+      if (session == null) {
+        context.replaceRoute(const LogInRoute());
+      } else {
+        context.replaceRoute(const HomeRoute());
+      }
     } else {
-      context.replaceRoute(const HomeRoute());
+         context.replaceRoute(const LandingRoute());
     }
   }
 
