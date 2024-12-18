@@ -22,7 +22,9 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) {
 mixin _$UserModel {
   String? get id => throw _privateConstructorUsedError;
   String? get user_name => throw _privateConstructorUsedError;
+  String? get full_name => throw _privateConstructorUsedError;
   String? get avatar_url => throw _privateConstructorUsedError;
+  String? get phone_number => throw _privateConstructorUsedError;
   String? get updated_at => throw _privateConstructorUsedError;
 
   /// Serializes this UserModel to a JSON map.
@@ -41,7 +43,12 @@ abstract class $UserModelCopyWith<$Res> {
       _$UserModelCopyWithImpl<$Res, UserModel>;
   @useResult
   $Res call(
-      {String? id, String? user_name, String? avatar_url, String? updated_at});
+      {String? id,
+      String? user_name,
+      String? full_name,
+      String? avatar_url,
+      String? phone_number,
+      String? updated_at});
 }
 
 /// @nodoc
@@ -61,7 +68,9 @@ class _$UserModelCopyWithImpl<$Res, $Val extends UserModel>
   $Res call({
     Object? id = freezed,
     Object? user_name = freezed,
+    Object? full_name = freezed,
     Object? avatar_url = freezed,
+    Object? phone_number = freezed,
     Object? updated_at = freezed,
   }) {
     return _then(_value.copyWith(
@@ -73,9 +82,17 @@ class _$UserModelCopyWithImpl<$Res, $Val extends UserModel>
           ? _value.user_name
           : user_name // ignore: cast_nullable_to_non_nullable
               as String?,
+      full_name: freezed == full_name
+          ? _value.full_name
+          : full_name // ignore: cast_nullable_to_non_nullable
+              as String?,
       avatar_url: freezed == avatar_url
           ? _value.avatar_url
           : avatar_url // ignore: cast_nullable_to_non_nullable
+              as String?,
+      phone_number: freezed == phone_number
+          ? _value.phone_number
+          : phone_number // ignore: cast_nullable_to_non_nullable
               as String?,
       updated_at: freezed == updated_at
           ? _value.updated_at
@@ -94,7 +111,12 @@ abstract class _$$UserModelImplCopyWith<$Res>
   @override
   @useResult
   $Res call(
-      {String? id, String? user_name, String? avatar_url, String? updated_at});
+      {String? id,
+      String? user_name,
+      String? full_name,
+      String? avatar_url,
+      String? phone_number,
+      String? updated_at});
 }
 
 /// @nodoc
@@ -112,7 +134,9 @@ class __$$UserModelImplCopyWithImpl<$Res>
   $Res call({
     Object? id = freezed,
     Object? user_name = freezed,
+    Object? full_name = freezed,
     Object? avatar_url = freezed,
+    Object? phone_number = freezed,
     Object? updated_at = freezed,
   }) {
     return _then(_$UserModelImpl(
@@ -124,9 +148,17 @@ class __$$UserModelImplCopyWithImpl<$Res>
           ? _value.user_name
           : user_name // ignore: cast_nullable_to_non_nullable
               as String?,
+      full_name: freezed == full_name
+          ? _value.full_name
+          : full_name // ignore: cast_nullable_to_non_nullable
+              as String?,
       avatar_url: freezed == avatar_url
           ? _value.avatar_url
           : avatar_url // ignore: cast_nullable_to_non_nullable
+              as String?,
+      phone_number: freezed == phone_number
+          ? _value.phone_number
+          : phone_number // ignore: cast_nullable_to_non_nullable
               as String?,
       updated_at: freezed == updated_at
           ? _value.updated_at
@@ -140,7 +172,12 @@ class __$$UserModelImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$UserModelImpl implements _UserModel {
   const _$UserModelImpl(
-      {this.id, this.user_name, this.avatar_url, this.updated_at});
+      {this.id,
+      this.user_name,
+      this.full_name,
+      this.avatar_url,
+      this.phone_number,
+      this.updated_at});
 
   factory _$UserModelImpl.fromJson(Map<String, dynamic> json) =>
       _$$UserModelImplFromJson(json);
@@ -150,13 +187,17 @@ class _$UserModelImpl implements _UserModel {
   @override
   final String? user_name;
   @override
+  final String? full_name;
+  @override
   final String? avatar_url;
+  @override
+  final String? phone_number;
   @override
   final String? updated_at;
 
   @override
   String toString() {
-    return 'UserModel(id: $id, user_name: $user_name, avatar_url: $avatar_url, updated_at: $updated_at)';
+    return 'UserModel(id: $id, user_name: $user_name, full_name: $full_name, avatar_url: $avatar_url, phone_number: $phone_number, updated_at: $updated_at)';
   }
 
   @override
@@ -167,16 +208,20 @@ class _$UserModelImpl implements _UserModel {
             (identical(other.id, id) || other.id == id) &&
             (identical(other.user_name, user_name) ||
                 other.user_name == user_name) &&
+            (identical(other.full_name, full_name) ||
+                other.full_name == full_name) &&
             (identical(other.avatar_url, avatar_url) ||
                 other.avatar_url == avatar_url) &&
+            (identical(other.phone_number, phone_number) ||
+                other.phone_number == phone_number) &&
             (identical(other.updated_at, updated_at) ||
                 other.updated_at == updated_at));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, id, user_name, avatar_url, updated_at);
+  int get hashCode => Object.hash(runtimeType, id, user_name, full_name,
+      avatar_url, phone_number, updated_at);
 
   /// Create a copy of UserModel
   /// with the given fields replaced by the non-null parameter values.
@@ -198,7 +243,9 @@ abstract class _UserModel implements UserModel {
   const factory _UserModel(
       {final String? id,
       final String? user_name,
+      final String? full_name,
       final String? avatar_url,
+      final String? phone_number,
       final String? updated_at}) = _$UserModelImpl;
 
   factory _UserModel.fromJson(Map<String, dynamic> json) =
@@ -209,7 +256,11 @@ abstract class _UserModel implements UserModel {
   @override
   String? get user_name;
   @override
+  String? get full_name;
+  @override
   String? get avatar_url;
+  @override
+  String? get phone_number;
   @override
   String? get updated_at;
 

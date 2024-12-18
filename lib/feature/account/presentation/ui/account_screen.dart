@@ -1,14 +1,15 @@
 // ignore_for_file: use_build_context_synchronously
-
-import 'dart:io';
+import 'package:auto_route/auto_route.dart';
 import 'package:chat_app/core/styles/app_colors.dart';
+import 'package:chat_app/core/styles/app_dimens.dart';
 import 'package:chat_app/core/styles/app_strings.dart';
 import 'package:chat_app/core/styles/text_styles.dart';
-import 'package:chat_app/core/utils/utils.dart';
 import 'package:chat_app/feature/account/presentation/controller/account_controller.dart';
+import 'package:chat_app/feature/account/presentation/widget/account_app_bar.dart';
+import 'package:chat_app/feature/home/presentation/widget/custom_app_bar.dart';
+import 'package:chat_app/routes/app_route.gr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AccountScreen extends ConsumerStatefulWidget {
   const AccountScreen({super.key});
@@ -18,10 +19,6 @@ class AccountScreen extends ConsumerStatefulWidget {
 }
 
 class _AccountScreenState extends ConsumerState<AccountScreen> {
-  final TextEditingController nameController = TextEditingController();
-  String? _imageUrl;
-  final supabase = Supabase.instance.client;
-
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -31,87 +28,70 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   }
 
   @override
-  void dispose() {
-    nameController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickAndUploadImage(BuildContext context) async {
-    try {
-      final imageUrl =
-          await ImageUploadService(supabase).selectAnduploadImage(context);
-      if (imageUrl != null) {
-        ref
-            .watch(accountControllerProvider.notifier)
-            .updateProfilePic(context, imageUrl);
-        setState(() {
-          _imageUrl = imageUrl;
-        });
-      }
-    } catch (e) {
-      // Handle Errors
-      debugPrint("Error uploading image: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to upload image: $e")),
-      );
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     final accountStatus = ref.watch(
-      accountControllerProvider.select((value) => value.accountStatus),
-    );
-    final avatarUrl =
-        ref.watch(accountControllerProvider).userDetails.avatar_url;
-    return SizedBox(
-      width: double.infinity,
-      height: double.infinity,
-      child: (accountStatus == AccountStatus.loading)
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : Column(
-              children: [
-                const SizedBox(height: 16),
-                if (accountStatus == AccountStatus.success) ...[
-                  Text("Profile", style: subText16SB),
-                  const SizedBox(height: 16),
-                  Stack(
-                    alignment: Alignment.bottomRight,
-                    children: [
-                      _imageUrl!=null && _imageUrl!.isNotEmpty?
-                      CircleAvatar(
-                              backgroundImage: NetworkImage(_imageUrl!),
-                              radius: 64,
-                            ):
-                      avatarUrl == null
-                          ? CircleAvatar(
-                              radius: 64,
-                              child: Image.asset(Drawables.noDp),
-                            )
-                          : CircleAvatar(
-                              backgroundImage: NetworkImage(avatarUrl),
-                              radius: 64,
+        accountControllerProvider.select((value) => value.accountStatus));
+    final userData = ref.watch(accountControllerProvider);
+    return Scaffold(
+      appBar: const CustomAppBar(appWidget: AccountAppBar(title: "Account")),
+      body: SizedBox(
+        width: double.infinity,
+        height: double.infinity,
+        child: (accountStatus == AccountStatus.loading)
+            ? const Center(
+                child: CircularProgressIndicator(),
+              )
+            : Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (accountStatus == AccountStatus.success) ...[
+                      Row(
+                        children: [
+                          userData.userDetails.avatar_url == null
+                              ? CircleAvatar(
+                                  radius: 40,
+                                  child: Image.asset(Drawables.noDp),
+                                )
+                              : CircleAvatar(
+                                  backgroundImage: NetworkImage(
+                                      userData.userDetails.avatar_url!),
+                                  radius: 40,
+                                ),
+                          dimenWidth16,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Hello",
+                                  style: subText14M,
+                                ),
+                                Text(
+                                  userData.userDetails.user_name ?? "",
+                                  style: subText16SB,
+                                ),
+                              ],
                             ),
-                      IconButton(
-                        onPressed: () => _pickAndUploadImage(context),
-                        icon: const Icon(
-                          Icons.add_a_photo,
-                          color: AppColors.gray400,
-                          size: 35,
-                        ),
+                          ),
+                          IconButton(
+                            onPressed: () => context.pushRoute(
+                                EditProfileRoute(user: userData.userDetails)),
+                            icon: const Icon(
+                              Icons.edit_rounded,
+                              color: AppColors.gray400,
+                              size: 28,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  Text(ref
-                          .watch(accountControllerProvider)
-                          .userDetails
-                          .user_name ??
-                      "nothing"),
-                ]
-              ],
-            ),
+                    ]
+                  ],
+                ),
+              ),
+      ),
     );
   }
 }

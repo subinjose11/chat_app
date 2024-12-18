@@ -1,4 +1,7 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:developer';
+import 'package:auto_route/auto_route.dart';
 import 'package:chat_app/feature/account/data/account_repo/account_repo.dart';
 import 'package:chat_app/feature/account/presentation/state/account_state.dart';
 import 'package:chat_app/feature/account/presentation/ui/account_screen.dart';
@@ -35,10 +38,19 @@ class AccountController extends StateNotifier<AccountState> {
     }
   }
 
-  void updateProfilePic(BuildContext context, String? profilePic) {
+  void updateProfile(WidgetRef ref, BuildContext context, String? profilePic,
+      String? userName, String? fullName, String? phone, String? email) async {
     UserModel userDetails = UserModel(
-        avatar_url: profilePic, updated_at: DateTime.now().toIso8601String());
-    accountRepository.updateProfilePic(context, userDetails);
+        user_name: userName,
+        full_name: fullName,
+        phone_number: phone,
+        avatar_url: profilePic,
+        updated_at: DateTime.now().toIso8601String());
+    final result = await accountRepository.updateProfile(context, userDetails);
+    if (result) {
+      ref.read(accountControllerProvider.notifier).fetchAccountDetails(context);
+      context.router.maybePop();
+    }
   }
 }
 

@@ -87,3 +87,9 @@ class ImageUploadService {
     return selectedImage;
   }
 }
+bool isNullOrEmpty(dynamic value) {
+  if (value == null) return true; // Check for null
+  if (value is String && value.trim().isEmpty) return true; // Check for empty strings
+  if (value is Iterable || value is Map) return value.isEmpty; // Check for empty collections
+  return false; // Value is neither null nor empty
+}
