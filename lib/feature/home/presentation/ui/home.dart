@@ -1,4 +1,6 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:chat_app/feature/account/presentation/ui/account_screen.dart';
+import 'package:chat_app/feature/account/presentation/widget/account_app_bar.dart';
 import 'package:chat_app/feature/chat/presentation/ui/chat_screen.dart';
 import 'package:chat_app/feature/home/presentation/controller/home_controller.dart';
 import 'package:chat_app/feature/chat/presentation/widget/chat_app_bar.dart';
@@ -30,9 +32,11 @@ class _MyHomePageState extends ConsumerState<HomePage> {
   final screens = [
     const ChatScreen(),
     const StatusScreen(),
+    const AccountScreen(),
   ];
   final appbars = [
     const ChatAppBar(title: "Chats"),
     const StatusAppBar(title: "Status"),
+     const AccountAppBar(title: "Account"),
   ];
 }
