@@ -38,10 +38,11 @@ class AccountRepository {
   void updateProfilePic(BuildContext context, UserModel userDetails) async {
     final SupabaseClient supabase = Supabase.instance.client;
     final userId = supabase.auth.currentUser!.id;
-    userDetails = userDetails.copyWith(id: userId);
-    log(userDetails.toJson().toString());
+    log(userDetails.avatar_url.toString());
     try {
-      await supabase.from('profiles').upsert(userDetails.toJson());
+      await supabase.from('profiles').upsert({
+        "id":userId,
+        "avatar_url":userDetails.avatar_url});
       showSnackBar(content:"Image uploaded successfully!", context: context);
     } on AuthException catch (e) {
       log(e.message);
