@@ -1,6 +1,8 @@
 import 'package:auto_route/auto_route.dart';
+import 'package:chat_app/core/styles/text_styles.dart';
 import 'package:chat_app/core/utils/utils.dart';
 import 'package:chat_app/core/widget/custom_button.dart';
+import 'package:chat_app/core/widget/custom_text_field.dart';
 import 'package:chat_app/feature/auth/presentation/controller/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -42,26 +44,29 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
         elevation: 0,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            const SizedBox(height: 20),
-            const Text('Create a account with your email id'),
-            TextField(
+             Text('Register', style: heading01),
+                const SizedBox(height: 16),
+             Text('Create a account with your email', style: subText14SB,),
+             const SizedBox(height: 24),
+              CustomTextField(
                 controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  hintText: 'Email id',
-                ),
+                hintText: "Email address",
+                prefixIcon: const Icon(Icons.mail_outline_rounded),
               ),
-              TextField(
+              const SizedBox(height: 16),
+              CustomTextField(
                 controller: _passwordController,
-                decoration: const InputDecoration(hintText: 'password'),
-                obscureText: true,
+                hintText: "Password",
+                isPasswordField: true,
+                prefixIcon: const Icon(Icons.lock_outline),
               ),
+              const SizedBox(height: 24),
               const Spacer(),
               SizedBox(
-                width: 90,
+                width: double.infinity,
                 child: CustomButton(
                   onPressed: () {
                    signUp();
