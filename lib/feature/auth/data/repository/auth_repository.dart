@@ -46,6 +46,16 @@ class AuthRepository {
         email: email,
         password: password,
       );
+      
+      /// The below is only for firebase authendication
+      await auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login Successful')),
+      );
+
       if (response.session != null) {
         // Fetch data from the 'profiles' table
         final result = await supabase.from('profiles').select();
