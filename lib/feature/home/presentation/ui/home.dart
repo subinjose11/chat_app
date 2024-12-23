@@ -1,6 +1,6 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:chat_app/feature/account/presentation/ui/account_screen.dart';
-import 'package:chat_app/feature/chat/presentation/ui/chat_screen.dart';
+import 'package:chat_app/feature/chat/presentation/ui/chat_list_screen.dart';
 import 'package:chat_app/feature/home/presentation/controller/home_controller.dart';
 import 'package:chat_app/feature/home/presentation/widget/bottom_nav_bar.dart';
 import 'package:chat_app/feature/status/presentation/ui/status_screen.dart';
@@ -25,7 +25,7 @@ class _MyHomePageState extends ConsumerState<HomePage> {
   }
 
   final screens = [
-    const ChatScreen(),
+    const ChatListScreen(),
     const StatusScreen(),
     const AccountScreen(),
   ];
