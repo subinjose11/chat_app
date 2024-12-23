@@ -16,10 +16,19 @@ class AccountRepository {
     required this.firestore,
   });
   Future<UserModel> fetchAccountDetails() async {
-    final SupabaseClient supabase = Supabase.instance.client;
+    final userId = auth.currentUser?.uid;
+    if (userId == null) throw Exception('User not logged in.');
     try {
-      final result = await supabase.from('profiles').select();
-      final response = UserModel.fromJson(result.first);
+      final result = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+      final data = result.data();
+      if (data == null) {
+        return const UserModel(
+            id: null); // Return a default UserModel if no data
+      }
+      final response = UserModel.fromJson(data);
       return response;
     } on AuthException catch (e) {
       log(e.message);
@@ -32,13 +41,11 @@ class AccountRepository {
 
   Future<bool> updateProfile(
       BuildContext context, UserModel userDetails) async {
-    final SupabaseClient supabase = Supabase.instance.client;
-    final userId = supabase.auth.currentUser!.id;
+     final userId = auth.currentUser?.uid;
     log(userDetails.toString());
     try {
-      await supabase.from('profiles').upsert({
-        "id": userId,
-        if (!isNullOrEmpty(userDetails.phone_number))
+        await FirebaseFirestore.instance.collection('users').doc(userId).set({
+       if (!isNullOrEmpty(userDetails.phone_number))
           "phone_number": userDetails.phone_number,
         if (!isNullOrEmpty(userDetails.user_name))
           "user_name": userDetails.user_name,
@@ -46,7 +53,7 @@ class AccountRepository {
           "full_name": userDetails.full_name,
         if (!isNullOrEmpty(userDetails.avatar_url))
           "avatar_url": userDetails.avatar_url,
-      });
+    },SetOptions(merge: true));
       showSnackBar(content: "Profile updated successfully!", context: context);
       return true;
     } on AuthException catch (e) {

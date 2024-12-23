@@ -48,13 +48,19 @@ class AuthRepository {
       );
       
       /// The below is only for firebase authendication
-      await auth.signInWithEmailAndPassword(
+     final userCredential= await auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Login Successful')),
       );
+       // Add user data to Firestore
+    await FirebaseFirestore.instance.collection('users').doc(userCredential.user?.uid).set({
+      'email': email,
+      'createdAt': FieldValue.serverTimestamp(),
+      'id': userCredential.user?.uid,
+    },SetOptions(merge: true));
 
       if (response.session != null) {
         // Fetch data from the 'profiles' table
@@ -81,10 +87,17 @@ class AuthRepository {
   void addUserDetails(BuildContext context, UserModel userDetails) async {
     final SupabaseClient supabase = Supabase.instance.client;
     final userId = supabase.auth.currentUser!.id;
+    final fUserId = auth.currentUser?.uid;
     userDetails = userDetails.copyWith(id: userId);
     log(userDetails.toJson().toString());
     try {
       await supabase.from('profiles').upsert(userDetails.toJson());
+
+        await FirebaseFirestore.instance.collection('users').doc(fUserId).set({
+      'avatar_url': userDetails.avatar_url,
+      'user_name':userDetails.user_name
+    },SetOptions(merge: true));
+
       context.router.replaceAll([const HomeRoute()]);
     } on AuthException catch (e) {
       log(e.message);
