@@ -49,12 +49,8 @@ class _ChatAppBarState extends ConsumerState<ChatAppBar> {
         ),
       
         GestureDetector(
-            onTap: () async{
-               final SupabaseClient supabase = Supabase.instance.client;
-                await supabase.auth.signOut();
-                 context.router.replaceAll([const LogInRoute()]);
-            },
-            child: const Icon(Icons.logout)),
+            onTap: () {},
+            child: const Icon(Icons.chat)),
         dimenWidth16,
       ],
     );

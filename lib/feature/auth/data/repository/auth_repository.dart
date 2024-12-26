@@ -29,7 +29,7 @@ class AuthRepository {
         password: password,
       );
       if (response.user != null) {
-        context.router.maybePop();
+        context.router.replace(const LogInRoute());
       }
     } on AuthException catch (error) {
       showSnackBar(content: error.message, context: context);
@@ -40,13 +40,31 @@ class AuthRepository {
 
   void signInWithEmail(
       BuildContext context, String email, String password) async {
+    final SupabaseClient supabase = Supabase.instance.client;
     try {
-      final response = await Supabase.instance.client.auth.signInWithPassword(
+      final response = await supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
+      
+      /// The below is only for firebase authendication
+      await auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login Successful')),
+      );
+
       if (response.session != null) {
-        context.router.replaceAll([const UserInfoRoute()]);
+        // Fetch data from the 'profiles' table
+        final result = await supabase.from('profiles').select();
+        log(result.toString());
+        if (result.first["user_name"] == null) {
+          context.router.replaceAll([const UserInfoRoute()]);
+        } else {
+          context.router.replaceAll([const HomeRoute()]);
+        }
       } else {
         showSnackBar(
             content: 'Login failed. Please try again.', context: context);
@@ -61,13 +79,13 @@ class AuthRepository {
   }
 
   void addUserDetails(BuildContext context, UserModel userDetails) async {
-    final userId = Supabase.instance.client.auth.currentUser!.id;
+    final SupabaseClient supabase = Supabase.instance.client;
+    final userId = supabase.auth.currentUser!.id;
     userDetails = userDetails.copyWith(id: userId);
     log(userDetails.toJson().toString());
     try {
-          await Supabase.instance.client.from('profiles').upsert(userDetails.toJson());
-        context.router.replaceAll([const HomeRoute()]);
-    
+      await supabase.from('profiles').upsert(userDetails.toJson());
+      context.router.replaceAll([const HomeRoute()]);
     } on AuthException catch (e) {
       log(e.message);
       showSnackBar(content: e.message, context: context);

@@ -25,6 +25,10 @@ class BottomNavBar extends ConsumerWidget {
           icon: Icon(Icons.video_call_outlined),
           label: 'Status',
         ),
+         BottomNavigationBarItem(
+          icon: Icon(Icons.account_circle),
+          label: 'Account',
+        ),
       ],
     );
   }
