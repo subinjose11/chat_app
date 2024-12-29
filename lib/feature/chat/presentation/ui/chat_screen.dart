@@ -1,19 +1,18 @@
-import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChatScreen extends StatefulWidget {
-  final String chatId;
-  final String currentUserId;
-  final String otherUserId;
-  final String userName;
+  final String name;
+  final String uid;
+  final bool isGroupChat;
+  final String profilePic;
 
   const ChatScreen({
     super.key,
-    required this.chatId,
-    required this.currentUserId,
-    required this.otherUserId,
-    required this.userName,
+    required this.name,
+    required this.uid,
+    required this.isGroupChat,
+    required this.profilePic,
   });
 
   @override
@@ -28,46 +27,13 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-
-    // Listen for real-time updates in the chat
-    supabase
-        .from('message')
-        .stream(primaryKey: ['id'])
-        .eq('chat_id', widget.chatId)
-        .order('created_at', ascending: true)
-        .listen((data) {
-          setState(() {
-            messages = data;
-          });
-        });
-  }
-
-  // Function to send a message
-  Future<void> sendMessage(
-      String content, String contentType, String? mediaUrl) async {
-    final response = await supabase.from('message').insert([
-      {
-        'chat_id': widget.chatId,
-        'user_from': widget.currentUserId,
-        'user_to': widget.otherUserId,
-        'content': content,
-        'content_type': contentType,
-        'media_url': mediaUrl,
-      }
-    ]).select();
-
-    if (response.isNotEmpty) {
-      _messageController.clear(); // Clear input field after sending
-    } else {
-      log('Error sending message');
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.userName),
+        title: Text(widget.name),
         centerTitle: false,
         actions: [
           IconButton(
@@ -89,8 +55,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 itemCount: messages.length,
                 itemBuilder: (context, index) {
                   final message = messages[index];
-                  bool isCurrentUser =
-                      message['user_from'] == widget.currentUserId;
+                  bool isCurrentUser = message['user_from'] == widget.uid;
 
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 5.0),
@@ -178,20 +143,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.send),
-                    onPressed: () {
-                      // Send text message
-                      if (_messageController.text.isNotEmpty) {
-                        sendMessage(_messageController.text, 'text', null);
-                      }
-                    },
+                    onPressed: () {},
                   ),
                   IconButton(
                     icon: const Icon(Icons.image),
-                    onPressed: () {
-                      // You can implement media upload here
-                      sendMessage('Image message', 'image',
-                          'https://your-media-url.com/image.jpg');
-                    },
+                    onPressed: () {},
                   ),
                 ],
               ),
