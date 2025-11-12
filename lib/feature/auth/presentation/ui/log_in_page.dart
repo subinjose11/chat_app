@@ -100,6 +100,33 @@ class _LogInPageState extends ConsumerState<LogInPage> {
                 ],
               ),
               const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    await ref.read(authControllerProvider).signInWithGoogle(context);
+                  },
+                  icon: Image.asset(
+                    'assets/drawables/google_logo.png',
+                    height: 24,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(Icons.g_mobiledata, size: 24);
+                    },
+                  ),
+                  label: Text(
+                    'Continue with Google',
+                    style: subText14SB,
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    side: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                      width: 1,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Text(
                   'Dont have an account?',

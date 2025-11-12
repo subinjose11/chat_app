@@ -10,15 +10,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 // import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthRepository {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
+  final GoogleSignIn googleSignIn;
   AuthRepository({
     required this.auth,
     required this.firestore,
+    required this.googleSignIn,
   });
 
   void registerWithEmail(
@@ -126,6 +129,86 @@ class AuthRepository {
     }
   }
 
+  Future<void> signInWithGoogle(BuildContext context) async {
+    try {
+      // Trigger the Google Sign-In flow
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+      if (googleUser == null) {
+        // User cancelled the sign-in
+        return;
+      }
+
+      // Obtain auth details from the request
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      // Create a new credential for Firebase
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // Sign in to Firebase with the Google credential
+      final userCredential = await auth.signInWithCredential(credential);
+
+      if (userCredential.user != null) {
+        final userId = userCredential.user!.uid;
+
+        // Check if user document exists in Firestore
+        final userDoc = await firestore.collection('users').doc(userId).get();
+
+        if (!userDoc.exists) {
+          // Create new user document with Google account data
+          await firestore.collection('users').doc(userId).set({
+            'email': userCredential.user!.email,
+            'full_name': userCredential.user!.displayName,
+            'avatar_url': userCredential.user!.photoURL,
+            'createdAt': FieldValue.serverTimestamp(),
+            'userId': userId,
+          });
+          log('New Google user created in Firestore');
+        }
+
+        // Check if user has completed profile setup
+        final userData = userDoc.exists ? userDoc.data() : null;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Google Sign-In Successful')),
+        );
+
+        if (userData?['user_name'] == null || userData?['user_name'] == '') {
+          // Profile incomplete, redirect to user info page
+          context.router.replaceAll([const UserInfoRoute()]);
+        } else {
+          // Profile complete, redirect to home
+          context.router.replaceAll([const HomeRoute()]);
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = 'Google Sign-In failed';
+      switch (e.code) {
+        case 'account-exists-with-different-credential':
+          message = 'An account already exists with a different sign-in method';
+          break;
+        case 'invalid-credential':
+          message = 'Invalid credentials. Please try again';
+          break;
+        case 'operation-not-allowed':
+          message = 'Google Sign-In is not enabled';
+          break;
+        default:
+          message = e.message ?? 'Google Sign-In failed';
+      }
+      log('Google Sign-In error: ${e.code} - ${e.message}');
+      showSnackBar(content: message, context: context);
+    } catch (e) {
+      log('Unexpected Google Sign-In error: $e');
+      showSnackBar(
+          content: 'Google Sign-In failed: ${e.toString()}', context: context);
+    }
+  }
+
   void addUserDetails(BuildContext context, UserModel userDetails) async {
     try {
       final userId = auth.currentUser?.uid;
@@ -160,5 +243,8 @@ class AuthRepository {
 
 final authRepositoryProvider = Provider(
   (ref) => AuthRepository(
-      auth: FirebaseAuth.instance, firestore: FirebaseFirestore.instance),
+    auth: FirebaseAuth.instance,
+    firestore: FirebaseFirestore.instance,
+    googleSignIn: GoogleSignIn(),
+  ),
 );

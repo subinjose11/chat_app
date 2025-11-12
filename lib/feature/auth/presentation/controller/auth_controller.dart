@@ -17,6 +17,10 @@ class AuthController {
     authRepository.signInWithEmail(context, email, password);
   }
 
+  Future<void> signInWithGoogle(BuildContext context) async {
+    await authRepository.signInWithGoogle(context);
+  }
+
   void addUserDetails(
     BuildContext context,
     String? profilePic,
