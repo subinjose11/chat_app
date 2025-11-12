@@ -581,42 +581,6 @@ class VehicleDetailScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 24),
 
-                  // Service Status
-                  Row(
-                    children: [
-                      Text(
-                        'Service Status:',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color:
-                              isDark ? AppColors.white : AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getStatusColor(vehicle.serviceStatus)
-                              .withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          vehicle.serviceStatus.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: _getStatusColor(vehicle.serviceStatus),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
                   // Service History Timeline
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -702,7 +666,7 @@ class VehicleDetailScreen extends ConsumerWidget {
                           padding: const EdgeInsets.all(32),
                           child: Column(
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.error_outline,
                                 size: 48,
                                 color: AppColors.error,
@@ -763,20 +727,6 @@ class VehicleDetailScreen extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'active':
-      case 'in_progress':
-        return AppColors.warning;
-      case 'pending':
-        return AppColors.info;
-      case 'completed':
-        return AppColors.success;
-      default:
-        return AppColors.gray500;
-    }
   }
 
   Widget _buildInfoSection(
@@ -882,32 +832,25 @@ class VehicleDetailScreen extends ConsumerWidget {
           const SizedBox(width: 16),
           // Service info
           Expanded(
-            child: GestureDetector(
-              onTap: () {
-                // Navigate to report detail screen
-                context.push('/report-detail', extra: {
-                  'serviceOrder': service,
-                  'vehicle': vehicle,
-                });
-              },
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 20),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color:
-                      isDark ? AppColors.cardBackgroundDark : AppColors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isDark ? AppColors.gray700 : AppColors.gray300,
-                  ),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 20),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.cardBackgroundDark : AppColors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark ? AppColors.gray700 : AppColors.gray300,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header with service type and cost
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
                           service.serviceType,
                           style: TextStyle(
                             fontSize: 16,
@@ -917,50 +860,121 @@ class VehicleDetailScreen extends ConsumerWidget {
                                 : AppColors.textPrimary,
                           ),
                         ),
-                        Row(
-                          children: [
-                            Text(
-                              '\$${service.totalCost.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primaryBlue,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Icon(
-                              Icons.chevron_right,
-                              color: isDark
-                                  ? AppColors.gray500
-                                  : AppColors.gray400,
-                              size: 20,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      service.description,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDark
-                            ? AppColors.gray400
-                            : AppColors.textSecondary,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    if (service.createdAt != null)
                       Text(
-                        DateFormat('MMM dd, yyyy').format(service.createdAt!),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color:
-                              isDark ? AppColors.gray500 : AppColors.textHint,
+                        '₹${service.totalCost.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryBlue,
                         ),
                       ),
-                  ],
-                ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Description
+                  Text(
+                    service.description,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color:
+                          isDark ? AppColors.gray400 : AppColors.textSecondary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Status Badge and Date
+                  Row(
+                    children: [
+                      // Status Badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getServiceStatusColor(service.status)
+                              .withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: _getServiceStatusColor(service.status),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          _formatStatus(service.status),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: _getServiceStatusColor(service.status),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+
+                      // Date
+                      if (service.createdAt != null)
+                        Text(
+                          DateFormat('MMM dd, yyyy').format(service.createdAt!),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color:
+                                isDark ? AppColors.gray500 : AppColors.textHint,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Action Buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      // Edit Button
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          // Navigate to edit service order
+                          context.push('/service-order-edit', extra: service);
+                        },
+                        icon: const Icon(Icons.edit, size: 16),
+                        label: const Text('Edit'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          minimumSize: const Size(0, 0),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+
+                      // Report Button
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          // Navigate to report detail screen
+                          context.push('/report-detail', extra: {
+                            'serviceOrder': service,
+                            'vehicle': vehicle,
+                          });
+                        },
+                        icon: const Icon(Icons.description, size: 16),
+                        label: const Text('Report'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          minimumSize: const Size(0, 0),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
@@ -969,16 +983,27 @@ class VehicleDetailScreen extends ConsumerWidget {
     );
   }
 
+  String _formatStatus(String status) {
+    return status
+        .split('_')
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
+  }
+
   Color _getServiceStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'completed':
-        return AppColors.success;
       case 'in_progress':
-        return AppColors.warning;
+        return const Color(0xFFFF9800); // Orange - Work in progress
       case 'pending':
-        return AppColors.info;
+        return const Color(0xFF2196F3); // Blue - Waiting to start
+      case 'completed':
+        return const Color(0xFF4CAF50); // Green - Work finished
+      case 'delivered':
+        return const Color(0xFF00C853); // Bright Green - Vehicle handed over
+      case 'cancelled':
+        return const Color(0xFFEF5350); // Red - Service cancelled
       default:
-        return AppColors.gray500;
+        return AppColors.gray500; // Gray - Unknown status
     }
   }
 }

@@ -20,6 +20,8 @@ class _VehicleRegistrationScreenState extends ConsumerState<VehicleRegistrationS
   // Customer fields
   final _customerNameController = TextEditingController();
   final _phoneNumberController = TextEditingController();
+  final _customerEmailController = TextEditingController();
+  final _customerAddressController = TextEditingController();
   
   // Vehicle fields
   final _vehicleNumberController = TextEditingController();
@@ -35,6 +37,8 @@ class _VehicleRegistrationScreenState extends ConsumerState<VehicleRegistrationS
   void dispose() {
     _customerNameController.dispose();
     _phoneNumberController.dispose();
+    _customerEmailController.dispose();
+    _customerAddressController.dispose();
     _vehicleNumberController.dispose();
     _modelController.dispose();
     _brandController.dispose();
@@ -45,41 +49,78 @@ class _VehicleRegistrationScreenState extends ConsumerState<VehicleRegistrationS
 
   Future<void> _saveVehicle() async {
     if (_formKey.currentState!.validate()) {
-      // First create customer
-      final customer = Customer(
-        name: _customerNameController.text,
-        phone: _phoneNumberController.text,
-        email: '', // Optional, can be added later
-        createdAt: DateTime.now(),
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
       );
 
-      // Save customer and get the ID
-      // For now, using a temporary ID - in production, this should return the created customer ID
-      ref.read(customerControllerProvider).createCustomer(context, customer);
-      
-      // Create vehicle with customer reference
-      final vehicle = Vehicle(
-        numberPlate: _vehicleNumberController.text,
-        make: _brandController.text,
-        model: _modelController.text,
-        year: _yearController.text,
-        fuelType: _selectedFuelType,
-        customerId: 'temp_customer_id', // Should be actual customer ID from above
-        serviceStatus: 'completed',
-        createdAt: DateTime.now(),
-      );
+      try {
+        // Generate unique IDs
+        final customerId = 'customer_${DateTime.now().millisecondsSinceEpoch}';
+        final vehicleId = 'vehicle_${DateTime.now().millisecondsSinceEpoch}';
 
-      ref.read(vehicleControllerProvider).createVehicle(context, vehicle);
-      
-      if (mounted) {
-        // Navigate to vehicle details
-        context.go('/home');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Vehicle registered successfully!'),
-            backgroundColor: AppColors.success,
-          ),
+        // First create customer with generated ID
+        final customer = Customer(
+          id: customerId,
+          name: _customerNameController.text,
+          phone: _phoneNumberController.text,
+          email: _customerEmailController.text.isEmpty ? '' : _customerEmailController.text,
+          address: _customerAddressController.text.isEmpty ? null : _customerAddressController.text,
+          createdAt: DateTime.now(),
         );
+
+        // Save customer
+        await ref.read(customerControllerProvider).createCustomer(context, customer);
+        
+        // Small delay to ensure customer is saved
+        await Future.delayed(const Duration(milliseconds: 300));
+        
+        // Create vehicle with proper customer reference
+        final vehicle = Vehicle(
+          id: vehicleId,
+          numberPlate: _vehicleNumberController.text,
+          make: _brandController.text,
+          model: _modelController.text,
+          year: _yearController.text,
+          fuelType: _selectedFuelType,
+          customerId: customerId,
+          serviceStatus: 'active',
+          createdAt: DateTime.now(),
+        );
+
+        // Save vehicle
+        await ref.read(vehicleControllerProvider).createVehicle(context, vehicle);
+        
+        if (mounted) {
+          // Close loading dialog
+          Navigator.pop(context);
+          
+          // Navigate to vehicle details
+          context.go('/home');
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Vehicle registered successfully!'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          // Close loading dialog
+          Navigator.pop(context);
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error registering vehicle: ${e.toString()}'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
       }
     }
   }
@@ -144,6 +185,28 @@ class _VehicleRegistrationScreenState extends ConsumerState<VehicleRegistrationS
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 16),
+
+              TextFormField(
+                controller: _customerEmailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email (Optional)',
+                  hintText: 'Enter email address',
+                  prefixIcon: Icon(Icons.email),
+                ),
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 16),
+
+              TextFormField(
+                controller: _customerAddressController,
+                decoration: const InputDecoration(
+                  labelText: 'Address (Optional)',
+                  hintText: 'Enter customer address',
+                  prefixIcon: Icon(Icons.location_on),
+                ),
+                maxLines: 2,
               ),
               const SizedBox(height: 32),
 

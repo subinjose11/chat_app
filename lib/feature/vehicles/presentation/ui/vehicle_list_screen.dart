@@ -20,21 +20,6 @@ class VehicleListScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Vehicles'),
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.filter_list),
-            onSelected: (value) {
-              ref.read(vehicleStatusFilterProvider.notifier).state = value;
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: 'all', child: Text('All')),
-              const PopupMenuItem(value: 'active', child: Text('Active')),
-              const PopupMenuItem(value: 'pending', child: Text('Pending')),
-              const PopupMenuItem(value: 'completed', child: Text('Completed')),
-            ],
-          ),
-          const SizedBox(width: 8),
-        ],
       ),
       body: Column(
         children: [

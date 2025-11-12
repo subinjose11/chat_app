@@ -298,7 +298,7 @@ class _ReportDetailScreenState extends ConsumerState<ReportDetailScreen> {
                   const SizedBox(height: 16),
                   
                   // Labor Cost
-                  _buildInfoRow(Icons.engineering, 'Labor Cost', '\$${widget.serviceOrder.laborCost.toStringAsFixed(2)}'),
+                  _buildInfoRow(Icons.engineering, 'Labor Cost', '₹${widget.serviceOrder.laborCost.toStringAsFixed(2)}'),
                   
                   // Parts Breakdown
                   if (widget.serviceOrder.parts.isNotEmpty) ...[
@@ -336,7 +336,7 @@ class _ReportDetailScreenState extends ConsumerState<ReportDetailScreen> {
                             ],
                           ),
                           Text(
-                            '\$${part.cost.toStringAsFixed(2)}',
+                            '₹${part.cost.toStringAsFixed(2)}',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
@@ -364,7 +364,7 @@ class _ReportDetailScreenState extends ConsumerState<ReportDetailScreen> {
                             ),
                           ),
                           Text(
-                            '\$${widget.serviceOrder.partsCost.toStringAsFixed(2)}',
+                            '₹${widget.serviceOrder.partsCost.toStringAsFixed(2)}',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -397,7 +397,7 @@ class _ReportDetailScreenState extends ConsumerState<ReportDetailScreen> {
                         ],
                       ),
                       Text(
-                        '\$${widget.serviceOrder.totalCost.toStringAsFixed(2)}',
+                        '₹${widget.serviceOrder.totalCost.toStringAsFixed(2)}',
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -676,16 +676,18 @@ class _ReportDetailScreenState extends ConsumerState<ReportDetailScreen> {
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'pending':
-        return AppColors.warning;
       case 'in_progress':
-        return AppColors.info;
+        return const Color(0xFFFF9800); // Orange - Work in progress
+      case 'pending':
+        return const Color(0xFF2196F3); // Blue - Waiting to start
       case 'completed':
-        return AppColors.success;
+        return const Color(0xFF4CAF50); // Green - Work finished
       case 'delivered':
-        return AppColors.primaryBlue;
+        return const Color(0xFF00C853); // Bright Green - Vehicle handed over
+      case 'cancelled':
+        return const Color(0xFFEF5350); // Red - Service cancelled
       default:
-        return AppColors.gray500;
+        return AppColors.gray500; // Gray - Unknown status
     }
   }
 

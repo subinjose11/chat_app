@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chat_app/core/styles/app_colors.dart';
 import 'package:chat_app/models/vehicle.dart';
+import 'package:chat_app/feature/service_orders/presentation/controller/service_order_controller.dart';
 import 'package:intl/intl.dart';
 
-class VehicleCard extends StatelessWidget {
+class VehicleCard extends ConsumerWidget {
   final Vehicle vehicle;
   final VoidCallback? onTap;
 
@@ -13,23 +15,50 @@ class VehicleCard extends StatelessWidget {
     this.onTap,
   });
 
-  Color _getStatusColor() {
-    switch (vehicle.serviceStatus.toLowerCase()) {
-      case 'active':
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
       case 'in_progress':
-        return AppColors.warning;
+        return const Color(0xFFFF9800); // Orange - Work in progress
       case 'pending':
-        return AppColors.info;
+        return const Color(0xFF2196F3); // Blue - Waiting to start
       case 'completed':
-        return AppColors.success;
+        return const Color(0xFF4CAF50); // Green - Work finished
+      case 'delivered':
+        return const Color(0xFF00C853); // Bright Green - Vehicle handed over
+      case 'active':
+        return const Color(0xFF1976D2); // Dark Blue - No active service
+      case 'cancelled':
+        return const Color(0xFFEF5350); // Red - Service cancelled
       default:
-        return AppColors.gray500;
+        return AppColors.gray500; // Gray - Unknown status
+    }
+  }
+
+  String _formatStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'in_progress':
+        return 'IN SERVICE';
+      case 'pending':
+        return 'PENDING';
+      case 'completed':
+        return 'COMPLETED';
+      case 'delivered':
+        return 'DELIVERED';
+      case 'active':
+        return 'AVAILABLE';
+      case 'cancelled':
+        return 'CANCELLED';
+      default:
+        return status.toUpperCase();
     }
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // Get the latest service order for this vehicle
+    final serviceOrdersAsync = ref.watch(vehicleServiceOrdersStreamProvider(vehicle.id));
     
     return GestureDetector(
       onTap: onTap,
@@ -94,21 +123,78 @@ class VehicleCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
+                        // Dynamic status based on latest service order
+                        serviceOrdersAsync.when(
+                          data: (orders) {
+                            String status = 'active';
+                            
+                            if (orders.isNotEmpty) {
+                              // Try to find the most recent non-completed/delivered order
+                              try {
+                                final activeOrder = orders.firstWhere(
+                                  (order) => order.status != 'completed' && order.status != 'delivered',
+                                );
+                                status = activeOrder.status;
+                              } catch (e) {
+                                // If no active order, use the most recent order status
+                                status = orders.first.status;
+                              }
+                            }
+                            
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _getStatusColor(status).withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: _getStatusColor(status),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                _formatStatus(status),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: _getStatusColor(status),
+                                ),
+                              ),
+                            );
+                          },
+                          loading: () => Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.gray500.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
                           ),
-                          decoration: BoxDecoration(
-                            color: _getStatusColor().withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            vehicle.serviceStatus.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: _getStatusColor(),
+                          error: (_, __) => Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _getStatusColor('active').withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'ACTIVE',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: _getStatusColor('active'),
+                              ),
                             ),
                           ),
                         ),
@@ -125,28 +211,100 @@ class VehicleCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.calendar_today,
-                          size: 14,
-                          color: isDark 
-                              ? AppColors.gray500 
-                              : AppColors.textSecondary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          vehicle.lastServiceDate != null
-                              ? 'Last Service: ${DateFormat('MMM dd, yyyy').format(vehicle.lastServiceDate!)}'
-                              : 'No service history',
-                          style: TextStyle(
-                            fontSize: 12,
+                    // Show last service date from latest order
+                    serviceOrdersAsync.when(
+                      data: (orders) {
+                        if (orders.isEmpty) {
+                          return Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today,
+                                size: 14,
+                                color: isDark 
+                                    ? AppColors.gray500 
+                                    : AppColors.textSecondary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'No service history',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isDark 
+                                      ? AppColors.gray500 
+                                      : AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+                        
+                        final latestOrder = orders.first;
+                        return Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today,
+                              size: 14,
+                              color: isDark 
+                                  ? AppColors.gray500 
+                                  : AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              latestOrder.createdAt != null
+                                  ? 'Last Service: ${DateFormat('MMM dd, yyyy').format(latestOrder.createdAt!)}'
+                                  : 'Recent service',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark 
+                                    ? AppColors.gray500 
+                                    : AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                      loading: () => Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today,
+                            size: 14,
                             color: isDark 
                                 ? AppColors.gray500 
                                 : AppColors.textSecondary,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 4),
+                          Text(
+                            'Loading...',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark 
+                                  ? AppColors.gray500 
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      error: (_, __) => Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today,
+                            size: 14,
+                            color: isDark 
+                                ? AppColors.gray500 
+                                : AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'No service history',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark 
+                                  ? AppColors.gray500 
+                                  : AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

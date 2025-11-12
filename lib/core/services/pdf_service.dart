@@ -86,7 +86,7 @@ class PdfService {
             ...payments.map((payment) => 
               _buildInfoRow(
                 'Payment (${payment.paymentMethod})',
-                '\$${payment.amount.toStringAsFixed(2)} - ${payment.status}',
+                '₹${payment.amount.toStringAsFixed(2)} - ${payment.status}',
               ),
             ),
             pw.SizedBox(height: 20),
@@ -188,14 +188,14 @@ class PdfService {
               pw.TableRow(
                 children: [
                   _buildTableCell('Labor'),
-                  _buildTableCell('\$${order.laborCost.toStringAsFixed(2)}'),
+                  _buildTableCell('₹${order.laborCost.toStringAsFixed(2)}'),
                 ],
               ),
               // Parts
               pw.TableRow(
                 children: [
                   _buildTableCell('Parts & Materials'),
-                  _buildTableCell('\$${order.partsCost.toStringAsFixed(2)}'),
+                  _buildTableCell('₹${order.partsCost.toStringAsFixed(2)}'),
                 ],
               ),
               // Total
@@ -203,7 +203,7 @@ class PdfService {
                 decoration: const pw.BoxDecoration(color: PdfColors.grey200),
                 children: [
                   _buildTableCell('TOTAL', isHeader: true),
-                  _buildTableCell('\$${order.totalCost.toStringAsFixed(2)}', isHeader: true),
+                  _buildTableCell('₹${order.totalCost.toStringAsFixed(2)}', isHeader: true),
                 ],
               ),
             ],
@@ -308,7 +308,7 @@ class PdfService {
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           pw.Text(label),
-          pw.Text('\$${amount.toStringAsFixed(2)}'),
+          pw.Text('₹${amount.toStringAsFixed(2)}'),
         ],
       ),
     );
@@ -329,7 +329,7 @@ class PdfService {
             ),
           ),
           pw.Text(
-            '\$${amount.toStringAsFixed(2)}',
+            '₹${amount.toStringAsFixed(2)}',
             style: pw.TextStyle(
               fontSize: 16,
               fontWeight: pw.FontWeight.bold,

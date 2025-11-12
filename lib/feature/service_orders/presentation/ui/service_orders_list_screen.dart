@@ -378,7 +378,7 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                         child: _buildInfoItem(
                           Icons.attach_money,
                           'Total Cost',
-                          '\$${order.totalCost.toStringAsFixed(2)}',
+                          '₹${order.totalCost.toStringAsFixed(2)}',
                           isDark,
                           valueColor: AppColors.primaryBlue,
                           valueWeight: FontWeight.bold,
@@ -577,16 +577,18 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      case 'pending':
-        return AppColors.warning;
       case 'in_progress':
-        return AppColors.info;
+        return const Color(0xFFFF9800); // Orange - Work in progress
+      case 'pending':
+        return const Color(0xFF2196F3); // Blue - Waiting to start
       case 'completed':
-        return AppColors.success;
+        return const Color(0xFF4CAF50); // Green - Work finished
       case 'delivered':
-        return AppColors.primaryBlue;
+        return const Color(0xFF00C853); // Bright Green - Vehicle handed over
+      case 'cancelled':
+        return const Color(0xFFEF5350); // Red - Service cancelled
       default:
-        return AppColors.gray500;
+        return AppColors.gray500; // Gray - Unknown status
     }
   }
 

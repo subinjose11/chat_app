@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:chat_app/core/styles/app_colors.dart';
 import 'package:chat_app/feature/payments/data/repository/payment_repository.dart';
@@ -123,7 +122,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                 child: _buildSummaryCard(
                   isDark,
                   'Total Revenue',
-                  '\$${totalRevenue.toStringAsFixed(2)}',
+                  '₹${totalRevenue.toStringAsFixed(2)}',
                   Icons.attach_money,
                   AppColors.success,
                 ),
@@ -286,15 +285,15 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'completed':
-        return AppColors.success;
+        return const Color(0xFF4CAF50); // Green - Payment completed
       case 'pending':
-        return AppColors.warning;
+        return const Color(0xFF2196F3); // Blue - Payment pending
       case 'failed':
-        return AppColors.error;
+        return const Color(0xFFEF5350); // Red - Payment failed
       case 'refunded':
-        return AppColors.info;
+        return const Color(0xFFFF9800); // Orange - Payment refunded
       default:
-        return AppColors.gray500;
+        return AppColors.gray500; // Gray - Unknown status
     }
   }
 

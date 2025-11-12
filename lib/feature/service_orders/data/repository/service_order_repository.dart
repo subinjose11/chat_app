@@ -281,16 +281,35 @@ class ServiceOrderRepository {
       int pendingOrders = 0;
       int activeOrders = 0;
 
+      // Today's statistics
+      final now = DateTime.now();
+      final todayStart = DateTime(now.year, now.month, now.day);
+      final todayEnd = todayStart.add(const Duration(days: 1));
+
+      int todayOrders = 0;
+      double todayRevenue = 0.0;
+
       for (var doc in ordersSnapshot.docs) {
         final order = ServiceOrder.fromJson({...doc.data(), 'id': doc.id});
 
-        if (order.status == 'completed') {
+        // Overall statistics
+        if (order.status == 'completed' || order.status == 'delivered') {
           totalRevenue += order.totalCost;
           completedOrders++;
         } else if (order.status == 'pending') {
           pendingOrders++;
         } else if (order.status == 'in_progress') {
           activeOrders++;
+        }
+
+        // Today's statistics
+        if (order.createdAt != null &&
+            order.createdAt!.isAfter(todayStart) &&
+            order.createdAt!.isBefore(todayEnd)) {
+          todayOrders++;
+          if (order.status == 'completed' || order.status == 'delivered') {
+            todayRevenue += order.totalCost;
+          }
         }
       }
 
@@ -300,6 +319,8 @@ class ServiceOrderRepository {
         'pendingOrders': pendingOrders,
         'activeOrders': activeOrders,
         'totalOrders': ordersSnapshot.size,
+        'todayOrders': todayOrders,
+        'todayRevenue': todayRevenue,
       };
     } catch (e) {
       log('Error getting analytics: $e');

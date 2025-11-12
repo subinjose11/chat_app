@@ -8,8 +8,8 @@ class VehicleController {
 
   VehicleController({required this.vehicleRepository});
 
-  void createVehicle(BuildContext context, Vehicle vehicle) {
-    vehicleRepository.createVehicle(context, vehicle);
+  Future<void> createVehicle(BuildContext context, Vehicle vehicle) async {
+    await vehicleRepository.createVehicle(context, vehicle);
   }
 
   void updateVehicle(BuildContext context, Vehicle vehicle) {

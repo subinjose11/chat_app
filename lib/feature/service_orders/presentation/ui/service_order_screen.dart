@@ -29,19 +29,19 @@ class ServiceOrderScreen extends ConsumerStatefulWidget {
 
 class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Order fields
   final _descriptionController = TextEditingController();
   final _partsUsedController = TextEditingController();
   final _laborCostController = TextEditingController();
   final _partsCostController = TextEditingController();
   final _notesController = TextEditingController();
-  
+
   // Parts breakdown
   List<PartItem> _parts = [];
   final _partNameController = TextEditingController();
   final _partCostController = TextEditingController();
-  
+
   // Vehicle & Customer fields
   final _customerNameController = TextEditingController();
   final _customerPhoneController = TextEditingController();
@@ -50,20 +50,20 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
   final _vehicleMakeController = TextEditingController();
   final _vehicleModelController = TextEditingController();
   final _vehicleYearController = TextEditingController();
-  
+
   final ImagePicker _picker = ImagePicker();
-  
+
   // Dropdown values
   String? _selectedServiceType;
   final _customServiceTypeController = TextEditingController();
   String _selectedWorkStatus = 'pending';
   String _selectedFuelType = 'Petrol';
   DateTime _selectedDate = DateTime.now();
-  
+
   // Track if editing existing order
   String? _existingVehicleId;
   String? _existingCustomerId;
-  
+
   final List<String> _serviceTypes = [
     'Oil Change',
     'Brake Service',
@@ -76,14 +76,15 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
     'Electrical Work',
     'Other',
   ];
-  
+
   final List<String> _workStatuses = [
     'pending',
     'in_progress',
     'completed',
     'delivered',
+    'cancelled',
   ];
-  
+
   final List<String> _fuelTypes = [
     'Petrol',
     'Diesel',
@@ -91,11 +92,11 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
     'Hybrid',
     'CNG',
   ];
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     // If editing existing order
     if (widget.existingOrder != null) {
       final order = widget.existingOrder!;
@@ -106,13 +107,25 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
       _laborCostController.text = order.laborCost.toString();
       _partsCostController.text = order.partsCost.toString();
       _notesController.text = order.notes ?? '';
-      _selectedServiceType = order.serviceType.isNotEmpty ? order.serviceType : 'Oil Change';
+
+      // Handle custom service types
+      if (order.serviceType.isNotEmpty) {
+        if (_serviceTypes.contains(order.serviceType)) {
+          // It's a predefined service type
+          _selectedServiceType = order.serviceType;
+        } else {
+          // It's a custom service type
+          _selectedServiceType = 'Other';
+          _customServiceTypeController.text = order.serviceType;
+        }
+      }
+
       _selectedWorkStatus = order.status;
       _selectedDate = order.createdAt ?? DateTime.now();
-      
+
       // Load parts breakdown
       _parts = List<PartItem>.from(order.parts);
-      
+
       // Load vehicle and customer details for editing
       _loadExistingData();
     } else if (widget.vehicle != null) {
@@ -126,7 +139,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
       _selectedFuelType = widget.vehicle!.fuelType ?? 'Petrol';
     }
   }
-  
+
   Future<void> _loadExistingData() async {
     // Load vehicle and customer data from Firebase for editing
     // This is a placeholder - implement actual data fetching
@@ -137,11 +150,11 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
     final parts = _parts.fold<double>(0, (sum, part) => sum + part.cost);
     return labor + parts;
   }
-  
+
   double get _totalPartsCost {
     return _parts.fold<double>(0, (sum, part) => sum + part.cost);
   }
-  
+
   void _addPart() {
     if (_partNameController.text.isEmpty || _partCostController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -149,7 +162,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
       );
       return;
     }
-    
+
     final cost = double.tryParse(_partCostController.text);
     if (cost == null || cost < 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -157,7 +170,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
       );
       return;
     }
-    
+
     setState(() {
       _parts.add(PartItem(
         name: _partNameController.text,
@@ -167,7 +180,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
       _partCostController.clear();
     });
   }
-  
+
   void _removePart(int index) {
     setState(() {
       _parts.removeAt(index);
@@ -182,14 +195,20 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
         maxHeight: 1080,
         imageQuality: 85,
       );
-      
+
       if (image != null) {
         if (isBefore) {
           final currentPhotos = ref.read(beforePhotosProvider);
-          ref.read(beforePhotosProvider.notifier).state = [...currentPhotos, image];
+          ref.read(beforePhotosProvider.notifier).state = [
+            ...currentPhotos,
+            image
+          ];
         } else {
           final currentPhotos = ref.read(afterPhotosProvider);
-          ref.read(afterPhotosProvider.notifier).state = [...currentPhotos, image];
+          ref.read(afterPhotosProvider.notifier).state = [
+            ...currentPhotos,
+            image
+          ];
         }
       }
     } catch (e) {
@@ -228,7 +247,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
 
       String vehicleId = _existingVehicleId ?? '';
       String customerId = _existingCustomerId ?? '';
-      
+
       try {
         // Create customer and vehicle if new order (not editing)
         if (widget.existingOrder == null && _existingVehicleId == null) {
@@ -236,19 +255,23 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
           final timestamp = DateTime.now().millisecondsSinceEpoch;
           customerId = 'customer_$timestamp';
           vehicleId = 'vehicle_$timestamp';
-          
+
           // Create customer
           final customer = Customer(
             id: customerId,
             name: _customerNameController.text,
             phone: _customerPhoneController.text,
             email: '',
-            address: _customerAddressController.text.isNotEmpty ? _customerAddressController.text : null,
+            address: _customerAddressController.text.isNotEmpty
+                ? _customerAddressController.text
+                : null,
             createdAt: DateTime.now(),
           );
-          
-          ref.read(customerControllerProvider).createCustomer(context, customer);
-          
+
+          ref
+              .read(customerControllerProvider)
+              .createCustomer(context, customer);
+
           // Create vehicle
           final vehicle = Vehicle(
             id: vehicleId,
@@ -261,23 +284,26 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
             serviceStatus: _selectedWorkStatus,
             createdAt: DateTime.now(),
           );
-          
+
           ref.read(vehicleControllerProvider).createVehicle(context, vehicle);
-          
+
           // Small delay to ensure Firestore saves complete
           await Future.delayed(const Duration(milliseconds: 500));
         }
-        
+
         // Determine final service type
-        final finalServiceType = _selectedServiceType == 'Other' 
-            ? _customServiceTypeController.text 
+        final finalServiceType = _selectedServiceType == 'Other'
+            ? _customServiceTypeController.text
             : _selectedServiceType!;
-        
+
         final serviceOrder = ServiceOrder(
-          id: widget.existingOrder?.id ?? '', // Keep existing ID or empty for new
+          id: widget.existingOrder?.id ??
+              '', // Keep existing ID or empty for new
           serviceType: finalServiceType,
           description: _descriptionController.text,
-          partsUsed: _parts.map((p) => p.name).toList(), // Keep for backward compatibility
+          partsUsed: _parts
+              .map((p) => p.name)
+              .toList(), // Keep for backward compatibility
           parts: _parts, // New: parts with individual costs
           laborCost: double.tryParse(_laborCostController.text) ?? 0.0,
           partsCost: _totalPartsCost,
@@ -311,7 +337,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
         // Clear the form and photos
         ref.read(beforePhotosProvider.notifier).state = [];
         ref.read(afterPhotosProvider.notifier).state = [];
-        
+
         if (mounted) {
           // Close loading dialog
           Navigator.pop(context);
@@ -341,7 +367,9 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.existingOrder != null ? 'Edit Service Order' : 'Create Service Order'),
+        title: Text(widget.existingOrder != null
+            ? 'Edit Service Order'
+            : 'Create Service Order'),
       ),
       body: Form(
         key: _formKey,
@@ -350,8 +378,8 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Vehicle & Customer Information Section (Only for new orders)
-              if (widget.existingOrder == null) ...[
+              // Vehicle & Customer Information Section (Only for new orders without vehicle context)
+              if (widget.existingOrder == null && widget.vehicle == null) ...[
                 Text(
                   'Vehicle & Customer Information',
                   style: TextStyle(
@@ -361,7 +389,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Customer Name
                 TextFormField(
                   controller: _customerNameController,
@@ -378,7 +406,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Customer Phone
                 TextFormField(
                   controller: _customerPhoneController,
@@ -396,7 +424,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Customer Address
                 TextFormField(
                   controller: _customerAddressController,
@@ -409,7 +437,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                   keyboardType: TextInputType.streetAddress,
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Vehicle Number
                 TextFormField(
                   controller: _vehicleNumberController,
@@ -427,7 +455,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Vehicle Make
                 TextFormField(
                   controller: _vehicleMakeController,
@@ -444,7 +472,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Vehicle Model
                 TextFormField(
                   controller: _vehicleModelController,
@@ -461,7 +489,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Vehicle Year
                 TextFormField(
                   controller: _vehicleYearController,
@@ -476,14 +504,16 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                       return 'Please enter year';
                     }
                     final year = int.tryParse(value);
-                    if (year == null || year < 1900 || year > DateTime.now().year + 1) {
+                    if (year == null ||
+                        year < 1900 ||
+                        year > DateTime.now().year + 1) {
                       return 'Please enter a valid year';
                     }
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Fuel Type Dropdown
                 DropdownButtonFormField<String>(
                   value: _selectedFuelType,
@@ -505,7 +535,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                 ),
                 const SizedBox(height: 24),
               ],
-              
+
               // Service Information Section
               Text(
                 'Service Information',
@@ -516,7 +546,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Service Type Dropdown
               DropdownButtonFormField<String>(
                 value: _selectedServiceType,
@@ -544,7 +574,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Custom Service Type Input (shown when "Other" is selected)
               if (_selectedServiceType == 'Other') ...[
                 TextFormField(
@@ -555,7 +585,8 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                     prefixIcon: Icon(Icons.edit),
                   ),
                   validator: (value) {
-                    if (_selectedServiceType == 'Other' && (value == null || value.isEmpty)) {
+                    if (_selectedServiceType == 'Other' &&
+                        (value == null || value.isEmpty)) {
                       return 'Please enter custom service type';
                     }
                     return null;
@@ -613,7 +644,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Labor Cost
               TextFormField(
                 controller: _laborCostController,
@@ -622,7 +653,8 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                   hintText: '0.00',
                   prefixIcon: Icon(Icons.engineering),
                 ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
                 ],
@@ -640,7 +672,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Parts Breakdown Section
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -655,7 +687,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                   ),
                   if (_parts.isNotEmpty)
                     Text(
-                      'Total: \$${_totalPartsCost.toStringAsFixed(2)}',
+                      'Total: ₹${_totalPartsCost.toStringAsFixed(2)}',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -665,7 +697,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              
+
               // Parts List
               if (_parts.isNotEmpty)
                 Container(
@@ -692,18 +724,22 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                           part.name,
                           style: TextStyle(
                             fontSize: 14,
-                            color: isDark ? AppColors.white : AppColors.textPrimary,
+                            color: isDark
+                                ? AppColors.white
+                                : AppColors.textPrimary,
                           ),
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              '\$${part.cost.toStringAsFixed(2)}',
+                              '₹${part.cost.toStringAsFixed(2)}',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: isDark ? AppColors.white : AppColors.textPrimary,
+                                color: isDark
+                                    ? AppColors.white
+                                    : AppColors.textPrimary,
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -721,7 +757,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                   ),
                 ),
               const SizedBox(height: 12),
-              
+
               // Add Part Form
               Row(
                 children: [
@@ -743,12 +779,14 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                       decoration: const InputDecoration(
                         labelText: 'Cost',
                         hintText: '0.00',
-                        prefixText: '\$ ',
+                        prefixText: '₹ ',
                         isDense: true,
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                       inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d*\.?\d{0,2}')),
                       ],
                     ),
                   ),
@@ -784,7 +822,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                       ),
                     ),
                     Text(
-                      '\$${_totalCost.toStringAsFixed(2)}',
+                      '₹${_totalCost.toStringAsFixed(2)}',
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -826,26 +864,12 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          // Save order first, then navigate to report
-                          _submitOrder();
-                        }
-                      },
-                      icon: const Icon(Icons.summarize),
-                      label: const Text('Generate Report'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
                     child: ElevatedButton.icon(
                       onPressed: _submitOrder,
                       icon: const Icon(Icons.check),
-                      label: Text(widget.existingOrder != null ? 'Update Order' : 'Submit Order'),
+                      label: Text(widget.existingOrder != null
+                          ? 'Update Order'
+                          : 'Submit Order'),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
@@ -949,9 +973,10 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
   }
 
   String _formatStatus(String status) {
-    return status.split('_').map((word) => 
-      word[0].toUpperCase() + word.substring(1)
-    ).join(' ');
+    return status
+        .split('_')
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
   }
 
   @override
@@ -974,7 +999,3 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
     super.dispose();
   }
 }
-
-
-
-

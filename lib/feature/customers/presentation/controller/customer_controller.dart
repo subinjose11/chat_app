@@ -8,8 +8,8 @@ class CustomerController {
 
   CustomerController({required this.customerRepository});
 
-  void createCustomer(BuildContext context, Customer customer) {
-    customerRepository.createCustomer(context, customer);
+  Future<void> createCustomer(BuildContext context, Customer customer) async {
+    await customerRepository.createCustomer(context, customer);
   }
 
   void updateCustomer(BuildContext context, Customer customer) {

@@ -121,15 +121,15 @@ class AppointmentsScreen extends ConsumerWidget {
     switch (status.toLowerCase()) {
       case 'scheduled':
       case 'confirmed':
-        return AppColors.info;
+        return const Color(0xFF2196F3); // Blue - Appointment scheduled
       case 'in_progress':
-        return AppColors.warning;
+        return const Color(0xFFFF9800); // Orange - Appointment in progress
       case 'completed':
-        return AppColors.success;
+        return const Color(0xFF4CAF50); // Green - Appointment completed
       case 'cancelled':
-        return AppColors.error;
+        return const Color(0xFFEF5350); // Red - Appointment cancelled
       default:
-        return AppColors.gray500;
+        return AppColors.gray500; // Gray - Unknown status
     }
   }
 
