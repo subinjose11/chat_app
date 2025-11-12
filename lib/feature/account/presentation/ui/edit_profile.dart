@@ -5,12 +5,12 @@ import 'package:chat_app/core/styles/app_colors.dart';
 import 'package:chat_app/core/styles/app_dimens.dart';
 import 'package:chat_app/core/styles/app_strings.dart';
 import 'package:chat_app/core/styles/text_styles.dart';
-import 'package:chat_app/core/utils/utils.dart';
+// import 'package:chat_app/core/utils/utils.dart';
 import 'package:chat_app/feature/account/presentation/controller/account_controller.dart';
 import 'package:chat_app/feature/auth/data/model/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+// import 'package:supabase_flutter/supabase_flutter.dart';
 
 @RoutePage(name: "EditProfileRoute")
 class EditProfileScreen extends ConsumerStatefulWidget {
@@ -148,21 +148,21 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _pickAndUploadImage(BuildContext context) async {
-    final supabase = Supabase.instance.client;
-    try {
-      final imageUrl =
-          await ImageUploadService(supabase).selectAnduploadImage(context);
-      if (imageUrl != null) {
-        setState(() {
-          _imageUrl = imageUrl;
-        });
-      }
-    } catch (e) {
-      // Handle Errors
-      debugPrint("Error uploading image: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to upload image: $e")),
-      );
-    }
+    // final supabase = Supabase.instance.client;
+    // try {
+    //   final imageUrl =
+    //       await ImageUploadService(supabase).selectAnduploadImage(context);
+    //   if (imageUrl != null) {
+    //     setState(() {
+    //       _imageUrl = imageUrl;
+    //     });
+    //   }
+    // } catch (e) {
+    //   // Handle Errors
+    //   debugPrint("Error uploading image: $e");
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(content: Text("Failed to upload image: $e")),
+    //   );
+    // }
   }
 }

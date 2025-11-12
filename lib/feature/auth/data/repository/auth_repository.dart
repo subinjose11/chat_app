@@ -11,7 +11,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:supabase_flutter/supabase_flutter.dart';
+// import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthRepository {
   final FirebaseAuth auth;
@@ -24,73 +24,135 @@ class AuthRepository {
   void registerWithEmail(
       BuildContext context, String email, String password) async {
     try {
-      final response = await Supabase.instance.client.auth.signUp(
+      final userCredential = await auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-      if (response.user != null) {
+
+      if (userCredential.user != null) {
+        // Create initial user document in Firestore
+        await firestore.collection('users').doc(userCredential.user!.uid).set({
+          'email': email,
+          'createdAt': FieldValue.serverTimestamp(),
+          'userId': userCredential.user!.uid,
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Registration Successful! Please login.')),
+        );
         context.router.replace(const LogInRoute());
       }
-    } on AuthException catch (error) {
-      showSnackBar(content: error.message, context: context);
+    } on FirebaseAuthException catch (error) {
+      String message = 'Registration failed';
+      switch (error.code) {
+        case 'email-already-in-use':
+          message = 'This email is already registered';
+          break;
+        case 'weak-password':
+          message = 'Password is too weak';
+          break;
+        case 'invalid-email':
+          message = 'Invalid email address';
+          break;
+        default:
+          message = error.message ?? 'Registration failed';
+      }
+      showSnackBar(content: message, context: context);
     } catch (e) {
+      log('Registration error: $e');
       showSnackBar(content: e.toString(), context: context);
     }
   }
 
   void signInWithEmail(
       BuildContext context, String email, String password) async {
-    final SupabaseClient supabase = Supabase.instance.client;
     try {
-      final response = await supabase.auth.signInWithPassword(
+      // Sign in with Firebase Authentication
+      final userCredential = await auth.signInWithEmailAndPassword(
         email: email,
         password: password,
-      );
-      
-      /// The below is only for firebase authendication
-      await auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login Successful')),
       );
 
-      if (response.session != null) {
-        // Fetch data from the 'profiles' table
-        final result = await supabase.from('profiles').select();
-        log(result.toString());
-        if (result.first["user_name"] == null) {
-          context.router.replaceAll([const UserInfoRoute()]);
+      if (userCredential.user != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Login Successful')),
+        );
+
+        // Check if user profile is complete in Firestore
+        final userDoc = await firestore
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .get();
+
+        if (userDoc.exists) {
+          final userData = userDoc.data();
+          log('User data: $userData');
+
+          // Check if user has completed profile setup (has user_name)
+          if (userData?['user_name'] == null || userData?['user_name'] == '') {
+            context.router.replaceAll([const UserInfoRoute()]);
+          } else {
+            context.router.replaceAll([const HomeRoute()]);
+          }
         } else {
-          context.router.replaceAll([const HomeRoute()]);
+          // User document doesn't exist, redirect to complete profile
+          context.router.replaceAll([const UserInfoRoute()]);
         }
-      } else {
-        showSnackBar(
-            content: 'Login failed. Please try again.', context: context);
       }
-    } on AuthException catch (e) {
-      log(e.message);
-      showSnackBar(content: e.message, context: context);
+    } on FirebaseAuthException catch (e) {
+      String message = 'Login failed';
+      switch (e.code) {
+        case 'user-not-found':
+          message = 'No user found with this email';
+          break;
+        case 'wrong-password':
+          message = 'Incorrect password';
+          break;
+        case 'invalid-email':
+          message = 'Invalid email address';
+          break;
+        case 'user-disabled':
+          message = 'This account has been disabled';
+          break;
+        default:
+          message = e.message ?? 'Login failed';
+      }
+      log('Login error: ${e.code} - ${e.message}');
+      showSnackBar(content: message, context: context);
     } catch (e) {
-      log(e.toString());
+      log('Unexpected login error: $e');
       showSnackBar(content: e.toString(), context: context);
     }
   }
 
   void addUserDetails(BuildContext context, UserModel userDetails) async {
-    final SupabaseClient supabase = Supabase.instance.client;
-    final userId = supabase.auth.currentUser!.id;
-    userDetails = userDetails.copyWith(id: userId);
-    log(userDetails.toJson().toString());
     try {
-      await supabase.from('profiles').upsert(userDetails.toJson());
+      final userId = auth.currentUser?.uid;
+      if (userId == null) {
+        showSnackBar(content: 'User not authenticated', context: context);
+        return;
+      }
+
+      userDetails = userDetails.copyWith(id: userId);
+      log('Saving user details: ${userDetails.toJson().toString()}');
+
+      // Save to Firestore
+      await firestore
+          .collection('users')
+          .doc(userId)
+          .update(userDetails.toJson());
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated successfully!')),
+      );
       context.router.replaceAll([const HomeRoute()]);
-    } on AuthException catch (e) {
-      log(e.message);
-      showSnackBar(content: e.message, context: context);
+    } on FirebaseException catch (e) {
+      log('Firestore error: ${e.message}');
+      showSnackBar(
+          content: e.message ?? 'Failed to update profile', context: context);
     } catch (e) {
-      log(e.toString());
+      log('Error saving user details: $e');
       showSnackBar(content: e.toString(), context: context);
     }
   }

@@ -5,7 +5,7 @@ import 'package:chat_app/core/styles/text_styles.dart';
 import 'package:chat_app/local/shared_prefs_storage_service.dart';
 import 'package:chat_app/routes/app_route.gr.dart';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+// import 'package:supabase_flutter/supabase_flutter.dart';
 
 @RoutePage()
 class SplashPage extends StatefulWidget {
@@ -29,12 +29,12 @@ class SplashPageState extends State<SplashPage> {
     final isFirstLogin =
         await SharedPreferencesHelper.getBool("firstLogin") ?? false;
     if (isFirstLogin) {
-      final session = Supabase.instance.client.auth.currentSession;
-      if (session == null) {
+      // final session = Supabase.instance.client.auth.currentSession;
+      // if (session == null) {
         context.replaceRoute(const LogInRoute());
-      } else {
-        context.replaceRoute(const HomeRoute());
-      }
+      // } else {
+      //   context.replaceRoute(const HomeRoute());
+      // }
     } else {
          context.replaceRoute(const LandingRoute());
     }

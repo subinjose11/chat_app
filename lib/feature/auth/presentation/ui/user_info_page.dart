@@ -8,7 +8,7 @@ import 'package:chat_app/core/utils/utils.dart';
 import 'package:chat_app/feature/auth/presentation/controller/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+// import 'package:supabase_flutter/supabase_flutter.dart';
 
 @RoutePage()
 class UserInfoPage extends ConsumerStatefulWidget {
@@ -21,7 +21,7 @@ class UserInfoPage extends ConsumerStatefulWidget {
 class _UserInfoPageState extends ConsumerState<UserInfoPage> {
   final TextEditingController nameController = TextEditingController();
   File? image;
-  final supabase = Supabase.instance.client;
+  // final supabase = Supabase.instance.client;
   String? _imageUrl;
   bool _isUploading = false; // To indicate loading state
 
@@ -47,26 +47,27 @@ class _UserInfoPageState extends ConsumerState<UserInfoPage> {
       });
 
       // Step 2: Prepare for Upload
-      final imageExtension = selectedImage.path.split('.').last.toLowerCase();
-      final imageBytes = await selectedImage.readAsBytes();
-      final userId = supabase.auth.currentUser?.id;
-      final imagePath = '/$userId/profile';
+      // final imageExtension = selectedImage.path.split('.').last.toLowerCase();
+      // final imageBytes = await selectedImage.readAsBytes();
+      // final userId = supabase.auth.currentUser?.id;
+      // final imagePath = '/$userId/profile';
 
-      // Step 3: Upload Image to Supabase Storage
-      await supabase.storage.from('profiles').uploadBinary(
-            imagePath,
-            imageBytes,
-            fileOptions: FileOptions(
-              upsert: true,
-              contentType: 'image/$imageExtension',
-            ),
-          );
+      // // Step 3: Upload Image to Supabase Storage
+      // await supabase.storage.from('profiles').uploadBinary(
+      //       imagePath,
+      //       imageBytes,
+      //       fileOptions: FileOptions(
+      //         upsert: true,
+      //         contentType: 'image/$imageExtension',
+      //       ),
+      //     );
 
-      // Step 4: Get Public URL
-      String imageUrl = supabase.storage.from('profiles').getPublicUrl(imagePath);
-      imageUrl = Uri.parse(imageUrl).replace(queryParameters: {
-        't': DateTime.now().millisecondsSinceEpoch.toString(),
-      }).toString();
+      // // Step 4: Get Public URL
+      // String imageUrl = supabase.storage.from('profiles').getPublicUrl(imagePath);
+      // imageUrl = Uri.parse(imageUrl).replace(queryParameters: {
+      //   't': DateTime.now().millisecondsSinceEpoch.toString(),
+      // }).toString();
+      String imageUrl = "";
 
       // Step 5: Update State
       setState(() {

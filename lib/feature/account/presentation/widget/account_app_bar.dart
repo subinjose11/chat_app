@@ -8,7 +8,7 @@ import 'package:chat_app/routes/app_route.gr.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+// import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AccountAppBar extends ConsumerWidget {
   const AccountAppBar(
@@ -33,8 +33,8 @@ class AccountAppBar extends ConsumerWidget {
                final FirebaseAuth auth = FirebaseAuth.instance;
               await auth.signOut();
               
-              final SupabaseClient supabase = Supabase.instance.client;
-              await supabase.auth.signOut();
+              // final SupabaseClient supabase = Supabase.instance.client;
+              // await supabase.auth.signOut();
               await context.router.replaceAll([const LogInRoute()]);
               ref.invalidate(navIndexProvider);
             },

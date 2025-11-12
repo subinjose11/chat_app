@@ -1,5 +1,5 @@
 
 
-const supaBaseUrl = "https://cczirjmpqrqzykzwmgvz.supabase.co";
-const supaBaseAnonKey =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjemlyam1wcXJxenlrendtZ3Z6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI0MzEyMjMsImV4cCI6MjA0ODAwNzIyM30.jPxSPM7h0viIe6B5IdGEb1dA0geirAPTrU7zt4nKthA";
+// const supaBaseUrl = "https://cczirjmpqrqzykzwmgvz.supabase.co";
+// const supaBaseAnonKey =
+//     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjemlyam1wcXJxenlrendtZ3Z6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzI0MzEyMjMsImV4cCI6MjA0ODAwNzIyM30.jPxSPM7h0viIe6B5IdGEb1dA0geirAPTrU7zt4nKthA";

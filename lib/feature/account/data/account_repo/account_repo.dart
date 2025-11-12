@@ -6,7 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+// import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AccountRepository {
   final FirebaseAuth auth;
@@ -16,45 +16,77 @@ class AccountRepository {
     required this.firestore,
   });
   Future<UserModel> fetchAccountDetails() async {
-    final SupabaseClient supabase = Supabase.instance.client;
     try {
-      final result = await supabase.from('profiles').select();
-      final response = UserModel.fromJson(result.first);
-      return response;
-    } on AuthException catch (e) {
-      log(e.message);
+      final userId = auth.currentUser?.uid;
+      if (userId == null) {
+        log('No authenticated user');
+        return const UserModel(id: null);
+      }
+      
+      final userDoc = await firestore.collection('users').doc(userId).get();
+      
+      if (userDoc.exists) {
+        final userData = userDoc.data();
+        if (userData != null) {
+          final response = UserModel.fromJson(userData);
+          log('Fetched user data: $userData');
+          return response;
+        }
+      }
+      
+      log('User document does not exist');
+      return const UserModel(id: null);
+    } on FirebaseException catch (e) {
+      log('Firestore error: ${e.message}');
       return const UserModel(id: null);
     } catch (e) {
-      log(e.toString());
+      log('Error fetching account details: $e');
       return const UserModel(id: null);
     }
   }
 
   Future<bool> updateProfile(
       BuildContext context, UserModel userDetails) async {
-    final SupabaseClient supabase = Supabase.instance.client;
-    final userId = supabase.auth.currentUser!.id;
-    log(userDetails.toString());
     try {
-      await supabase.from('profiles').upsert({
-        "id": userId,
-        if (!isNullOrEmpty(userDetails.phone_number))
-          "phone_number": userDetails.phone_number,
-        if (!isNullOrEmpty(userDetails.user_name))
-          "user_name": userDetails.user_name,
-        if (!isNullOrEmpty(userDetails.full_name))
-          "full_name": userDetails.full_name,
-        if (!isNullOrEmpty(userDetails.avatar_url))
-          "avatar_url": userDetails.avatar_url,
-      });
+      final userId = auth.currentUser?.uid;
+      if (userId == null) {
+        showSnackBar(content: 'User not authenticated', context: context);
+        return false;
+      }
+      
+      log('Updating profile: $userDetails');
+      
+      // Prepare update data - only include non-empty fields
+      final updateData = <String, dynamic>{
+        'id': userId,
+      };
+      
+      if (!isNullOrEmpty(userDetails.phone_number)) {
+        updateData['phone_number'] = userDetails.phone_number;
+      }
+      if (!isNullOrEmpty(userDetails.user_name)) {
+        updateData['user_name'] = userDetails.user_name;
+      }
+      if (!isNullOrEmpty(userDetails.full_name)) {
+        updateData['full_name'] = userDetails.full_name;
+      }
+      if (!isNullOrEmpty(userDetails.avatar_url)) {
+        updateData['avatar_url'] = userDetails.avatar_url;
+      }
+      
+      updateData['updatedAt'] = FieldValue.serverTimestamp();
+      
+      // Update Firestore document
+      await firestore.collection('users').doc(userId).update(updateData);
+      
       showSnackBar(content: "Profile updated successfully!", context: context);
       return true;
-    } on AuthException catch (e) {
-      log(e.message);
-      showSnackBar(content: e.message, context: context);
+    } on FirebaseException catch (e) {
+      log('Firestore error: ${e.message}');
+      showSnackBar(content: e.message ?? 'Failed to update profile', context: context);
       return false;
     } catch (e) {
-      log(e.toString());
+      log('Error updating profile: $e');
       showSnackBar(content: e.toString(), context: context);
       return false;
     }

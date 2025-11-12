@@ -1,6 +1,6 @@
-import 'dart:developer';
+// import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+// import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChatScreen extends StatefulWidget {
   final String chatId;
@@ -21,7 +21,7 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final SupabaseClient supabase = Supabase.instance.client;
+  // final SupabaseClient supabase = Supabase.instance.client;
   final TextEditingController _messageController = TextEditingController();
   List<Map<String, dynamic>> messages = [];
 
@@ -30,37 +30,37 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
 
     // Listen for real-time updates in the chat
-    supabase
-        .from('message')
-        .stream(primaryKey: ['id'])
-        .eq('chat_id', widget.chatId)
-        .order('created_at', ascending: true)
-        .listen((data) {
-          setState(() {
-            messages = data;
-          });
-        });
+    // supabase
+    //     .from('message')
+    //     .stream(primaryKey: ['id'])
+    //     .eq('chat_id', widget.chatId)
+    //     .order('created_at', ascending: true)
+    //     .listen((data) {
+    //       setState(() {
+    //         messages = data;
+    //       });
+    //     });
   }
 
   // Function to send a message
   Future<void> sendMessage(
       String content, String contentType, String? mediaUrl) async {
-    final response = await supabase.from('message').insert([
-      {
-        'chat_id': widget.chatId,
-        'user_from': widget.currentUserId,
-        'user_to': widget.otherUserId,
-        'content': content,
-        'content_type': contentType,
-        'media_url': mediaUrl,
-      }
-    ]).select();
+    // final response = await supabase.from('message').insert([
+    //   {
+    //     'chat_id': widget.chatId,
+    //     'user_from': widget.currentUserId,
+    //     'user_to': widget.otherUserId,
+    //     'content': content,
+    //     'content_type': contentType,
+    //     'media_url': mediaUrl,
+    //   }
+    // ]).select();
 
-    if (response.isNotEmpty) {
-      _messageController.clear(); // Clear input field after sending
-    } else {
-      log('Error sending message');
-    }
+    // if (response.isNotEmpty) {
+    //   _messageController.clear(); // Clear input field after sending
+    // } else {
+    //   log('Error sending message');
+    // }
   }
 
   @override

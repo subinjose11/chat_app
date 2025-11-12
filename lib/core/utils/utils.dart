@@ -3,7 +3,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+// import 'package:supabase_flutter/supabase_flutter.dart';
 
 void showSnackBar({required BuildContext context, required String content}) {
   ScaffoldMessenger.of(context).showSnackBar(
@@ -34,47 +34,48 @@ Future<File?> pickImageFromGallery(BuildContext context) async {
 }
 
 class ImageUploadService {
-  final SupabaseClient supabase;
+  // final SupabaseClient supabase;
 
-  ImageUploadService(this.supabase);
+  // ImageUploadService(this.supabase);
 
   Future<String?> selectAnduploadImage(BuildContext context) async {
-    try {
-      final image = await pickImage(context);
-      if (image == null) {
-        return null;
-      }
-      // Step 1: Prepare for Upload
-      final imageExtension = image.path.split('.').last.toLowerCase();
-      final imageBytes = await image.readAsBytes();
-      final userId = supabase.auth.currentUser?.id;
-      final imagePath = '/$userId/profile';
+    // try {
+    //   final image = await pickImage(context);
+    //   if (image == null) {
+    //     return null;
+    //   }
+    //   // Step 1: Prepare for Upload
+    //   final imageExtension = image.path.split('.').last.toLowerCase();
+    //   final imageBytes = await image.readAsBytes();
+    //   final userId = supabase.auth.currentUser?.id;
+    //   final imagePath = '/$userId/profile';
 
-      // Step 2: Upload Image to Supabase Storage
-      await supabase.storage.from('profiles').uploadBinary(
-            imagePath,
-            imageBytes,
-            fileOptions: FileOptions(
-              upsert: true,
-              contentType: 'image/$imageExtension',
-            ),
-          );
+    //   // Step 2: Upload Image to Supabase Storage
+    //   await supabase.storage.from('profiles').uploadBinary(
+    //         imagePath,
+    //         imageBytes,
+    //         fileOptions: FileOptions(
+    //           upsert: true,
+    //           contentType: 'image/$imageExtension',
+    //         ),
+    //       );
 
-      // Step 3: Get Public URL
-      String imageUrl =
-          supabase.storage.from('profiles').getPublicUrl(imagePath);
-      imageUrl = Uri.parse(imageUrl).replace(queryParameters: {
-        't': DateTime.now().millisecondsSinceEpoch.toString(),
-      }).toString();
+    //   // Step 3: Get Public URL
+    //   String imageUrl =
+    //       supabase.storage.from('profiles').getPublicUrl(imagePath);
+    //   imageUrl = Uri.parse(imageUrl).replace(queryParameters: {
+    //     't': DateTime.now().millisecondsSinceEpoch.toString(),
+    //   }).toString();
 
-      return imageUrl;
-    } catch (e) {
-      debugPrint("Error uploading image: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to upload image: $e")),
-      );
-      return null;
-    }
+    //   return imageUrl;
+    // } catch (e) {
+    //   debugPrint("Error uploading image: $e");
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(content: Text("Failed to upload image: $e")),
+    //   );
+    //   return null;
+    // }
+    return null;
   }
 
   Future<File?> pickImage(BuildContext context) async {
