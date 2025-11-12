@@ -46,8 +46,8 @@ class NotificationService {
   }) async {
     const androidDetails = AndroidNotificationDetails(
       'autotrack_channel',
-      'AutoTrack Notifications',
-      channelDescription: 'Notifications for AutoTrack Pro',
+      'RN Auto garage Notifications',
+      channelDescription: 'Notifications for RN Auto garage',
       importance: Importance.high,
       priority: Priority.high,
     );

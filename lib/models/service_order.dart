@@ -28,6 +28,7 @@ class ServiceOrder with _$ServiceOrder {
     @Default([]) List<String> beforePhotos,
     @Default([]) List<String> afterPhotos,
     String? notes,
+    String? mechanicNotes,
   }) = _ServiceOrder;
 
   factory ServiceOrder.fromJson(Map<String, dynamic> json) =>

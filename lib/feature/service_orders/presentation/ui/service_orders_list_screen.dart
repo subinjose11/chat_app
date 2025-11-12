@@ -8,10 +8,6 @@ import 'package:chat_app/models/service_order.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 
-// Filter Providers
-final orderDateFilterProvider = StateProvider<String>((ref) => 'all'); // all, today, week, month
-final orderStatusFilterProvider = StateProvider<String>((ref) => 'all'); // all, pending, in_progress, completed, delivered
-
 class ServiceOrdersListScreen extends ConsumerStatefulWidget {
   const ServiceOrdersListScreen({super.key});
 
@@ -21,11 +17,31 @@ class ServiceOrdersListScreen extends ConsumerStatefulWidget {
 
 class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScreen> {
   String? _expandedOrderId;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      ref.read(serviceOrdersPaginationProvider.notifier).loadMore();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final ordersAsync = ref.watch(serviceOrdersStreamProvider);
+    final paginationState = ref.watch(serviceOrdersPaginationProvider);
     final dateFilter = ref.watch(orderDateFilterProvider);
     final statusFilter = ref.watch(orderStatusFilterProvider);
 
@@ -54,6 +70,7 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                       label: Text('Date: ${_formatFilter(dateFilter)}'),
                       onDeleted: () {
                         ref.read(orderDateFilterProvider.notifier).state = 'all';
+                        ref.read(serviceOrdersPaginationProvider.notifier).refresh();
                       },
                     ),
                   if (statusFilter != 'all')
@@ -61,6 +78,7 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                       label: Text('Status: ${_formatFilter(statusFilter)}'),
                       onDeleted: () {
                         ref.read(orderStatusFilterProvider.notifier).state = 'all';
+                        ref.read(serviceOrdersPaginationProvider.notifier).refresh();
                       },
                     ),
                 ],
@@ -69,87 +87,81 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
 
           // Orders List
           Expanded(
-            child: ordersAsync.when(
-              data: (orders) {
-                // Apply filters
-                final filteredOrders = _applyFilters(orders, dateFilter, statusFilter);
-
-                if (filteredOrders.isEmpty) {
-                  return Center(
+            child: paginationState.error != null
+                ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.assignment_outlined,
-                          size: 64,
-                          color: isDark ? AppColors.gray600 : AppColors.gray400,
-                        ),
+                        const Icon(Icons.error_outline, size: 48, color: AppColors.error),
                         const SizedBox(height: 16),
-                        Text(
-                          'No Orders Found',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? AppColors.white : AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          dateFilter != 'all' || statusFilter != 'all'
-                              ? 'Try adjusting your filters'
-                              : 'Create your first service order',
-                          style: TextStyle(
-                            color: isDark ? AppColors.gray400 : AppColors.textSecondary,
-                          ),
+                        Text('Error: ${paginationState.error}'),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            ref.read(serviceOrdersPaginationProvider.notifier).refresh();
+                          },
+                          child: const Text('Retry'),
                         ),
                       ],
                     ),
-                  );
-                }
+                  )
+                : paginationState.orders.isEmpty && !paginationState.isLoading
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.assignment_outlined,
+                              size: 64,
+                              color: isDark ? AppColors.gray600 : AppColors.gray400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No Orders Found',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? AppColors.white : AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              dateFilter != 'all' || statusFilter != 'all'
+                                  ? 'Try adjusting your filters'
+                                  : 'Create your first service order',
+                              style: TextStyle(
+                                color: isDark ? AppColors.gray400 : AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: () async {
+                          ref.read(serviceOrdersPaginationProvider.notifier).refresh();
+                        },
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.all(16),
+                          itemCount: paginationState.orders.length + (paginationState.hasMore ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (index == paginationState.orders.length) {
+                              return const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16.0),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
 
-                // Sort by date (newest first)
-                filteredOrders.sort((a, b) {
-                  final aDate = a.createdAt ?? DateTime(2000);
-                  final bDate = b.createdAt ?? DateTime(2000);
-                  return bDate.compareTo(aDate);
-                });
-
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    ref.invalidate(serviceOrdersStreamProvider);
-                  },
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: filteredOrders.length,
-                    itemBuilder: (context, index) {
-                      final order = filteredOrders[index];
-                      return Container(
-                        key: ValueKey('order_card_${order.id}'),
-                        child: _buildOrderCard(context, order, isDark),
-                      );
-                    },
-                  ),
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-                    const SizedBox(height: 16),
-                    Text('Error: ${error.toString()}'),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        ref.invalidate(serviceOrdersStreamProvider);
-                      },
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+                            final order = paginationState.orders[index];
+                            return Container(
+                              key: ValueKey('order_card_${order.id}'),
+                              child: _buildOrderCard(context, order, isDark),
+                            );
+                          },
+                        ),
+                      ),
           ),
         ],
       ),
@@ -165,39 +177,6 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
     );
   }
 
-  List<ServiceOrder> _applyFilters(List<ServiceOrder> orders, String dateFilter, String statusFilter) {
-    var filtered = orders;
-
-    // Apply date filter
-    if (dateFilter != 'all') {
-      final now = DateTime.now();
-      filtered = filtered.where((order) {
-        if (order.createdAt == null) return false;
-        
-        switch (dateFilter) {
-          case 'today':
-            return order.createdAt!.year == now.year &&
-                   order.createdAt!.month == now.month &&
-                   order.createdAt!.day == now.day;
-          case 'week':
-            final weekAgo = now.subtract(const Duration(days: 7));
-            return order.createdAt!.isAfter(weekAgo);
-          case 'month':
-            return order.createdAt!.year == now.year &&
-                   order.createdAt!.month == now.month;
-          default:
-            return true;
-        }
-      }).toList();
-    }
-
-    // Apply status filter
-    if (statusFilter != 'all') {
-      filtered = filtered.where((order) => order.status == statusFilter).toList();
-    }
-
-    return filtered;
-  }
 
   Widget _buildOrderCard(BuildContext context, ServiceOrder order, bool isDark) {
     return GestureDetector(
@@ -669,11 +648,15 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
               onPressed: () {
                 ref.read(orderDateFilterProvider.notifier).state = 'all';
                 ref.read(orderStatusFilterProvider.notifier).state = 'all';
+                ref.read(serviceOrdersPaginationProvider.notifier).refresh();
               },
               child: const Text('Clear All'),
             ),
             ElevatedButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                ref.read(serviceOrdersPaginationProvider.notifier).refresh();
+                Navigator.pop(context);
+              },
               child: const Text('Apply'),
             ),
           ],

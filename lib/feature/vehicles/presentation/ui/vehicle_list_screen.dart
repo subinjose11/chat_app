@@ -7,15 +7,42 @@ import 'package:chat_app/models/vehicle.dart';
 import 'package:chat_app/feature/vehicles/presentation/controller/vehicle_controller.dart';
 import 'package:go_router/go_router.dart';
 
-class VehicleListScreen extends ConsumerWidget {
+class VehicleListScreen extends ConsumerStatefulWidget {
   const VehicleListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<VehicleListScreen> createState() => _VehicleListScreenState();
+}
+
+class _VehicleListScreenState extends ConsumerState<VehicleListScreen> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      ref.read(vehiclesPaginationProvider.notifier).loadMore();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final searchQuery = ref.watch(vehicleSearchQueryProvider);
     final statusFilter = ref.watch(vehicleStatusFilterProvider);
-    final vehiclesAsync = ref.watch(filteredVehiclesProvider);
+    final paginationState = ref.watch(vehiclesPaginationProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -32,6 +59,7 @@ class VehicleListScreen extends ConsumerWidget {
             child: TextField(
               onChanged: (value) {
                 ref.read(vehicleSearchQueryProvider.notifier).state = value;
+                ref.read(vehiclesPaginationProvider.notifier).refresh();
               },
               decoration: InputDecoration(
                 hintText: 'Search by plate, make, or model...',
@@ -42,6 +70,9 @@ class VehicleListScreen extends ConsumerWidget {
                         onPressed: () {
                           ref.read(vehicleSearchQueryProvider.notifier).state =
                               '';
+                          ref
+                              .read(vehiclesPaginationProvider.notifier)
+                              .refresh();
                         },
                       )
                     : null,
@@ -58,67 +89,83 @@ class VehicleListScreen extends ConsumerWidget {
                 label: Text('Filter: $statusFilter'),
                 onDeleted: () {
                   ref.read(vehicleStatusFilterProvider.notifier).state = 'all';
+                  ref.read(vehiclesPaginationProvider.notifier).refresh();
                 },
               ),
             ),
 
           // Vehicle List
           Expanded(
-            child: vehiclesAsync.when(
-              data: (vehicles) {
-                if (vehicles.isEmpty) {
-                  return EmptyState(
-                    icon: Icons.directions_car_outlined,
-                    title: 'No Vehicles Found',
-                    message: searchQuery.isNotEmpty || statusFilter != 'all'
-                        ? 'Try adjusting your search or filter'
-                        : 'Start by adding your first vehicle',
-                    actionLabel: searchQuery.isEmpty && statusFilter == 'all'
-                        ? 'Add Vehicle'
-                        : null,
-                    onAction: searchQuery.isEmpty && statusFilter == 'all'
-                        ? () {
-                            _showAddVehicleDialog(context, ref);
-                          }
-                        : null,
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: vehicles.length,
-                  itemBuilder: (context, index) {
-                    final vehicle = vehicles[index];
-                    return VehicleCard(
-                      key: ValueKey('vehicle_${vehicle.id}'),
-                      vehicle: vehicle,
-                      onTap: () {
-                        context.push('/vehicle-detail', extra: vehicle);
-                      },
-                    );
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline,
-                        size: 48, color: AppColors.error),
-                    const SizedBox(height: 16),
-                    Text('Error: ${error.toString()}'),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        ref.invalidate(filteredVehiclesProvider);
-                      },
-                      child: const Text('Retry'),
+            child: paginationState.error != null
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline,
+                            size: 48, color: AppColors.error),
+                        const SizedBox(height: 16),
+                        Text('Error: ${paginationState.error}'),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            ref
+                                .read(vehiclesPaginationProvider.notifier)
+                                .refresh();
+                          },
+                          child: const Text('Retry'),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            ),
+                  )
+                : paginationState.vehicles.isEmpty && !paginationState.isLoading
+                    ? EmptyState(
+                        icon: Icons.directions_car_outlined,
+                        title: 'No Vehicles Found',
+                        message: searchQuery.isNotEmpty || statusFilter != 'all'
+                            ? 'Try adjusting your search or filter'
+                            : 'Start by adding your first vehicle',
+                        actionLabel:
+                            searchQuery.isEmpty && statusFilter == 'all'
+                                ? 'Add Vehicle'
+                                : null,
+                        onAction: searchQuery.isEmpty && statusFilter == 'all'
+                            ? () {
+                                _showAddVehicleDialog(context, ref);
+                              }
+                            : null,
+                      )
+                    : RefreshIndicator(
+                        onRefresh: () async {
+                          ref
+                              .read(vehiclesPaginationProvider.notifier)
+                              .refresh();
+                        },
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.all(16),
+                          itemCount: paginationState.vehicles.length +
+                              (paginationState.hasMore ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (index == paginationState.vehicles.length) {
+                              return const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16.0),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
+
+                            final vehicle = paginationState.vehicles[index];
+                            return VehicleCard(
+                              key: ValueKey('vehicle_${vehicle.id}'),
+                              vehicle: vehicle,
+                              onTap: () {
+                                context.push('/vehicle-detail', extra: vehicle);
+                              },
+                            );
+                          },
+                        ),
+                      ),
           ),
         ],
       ),

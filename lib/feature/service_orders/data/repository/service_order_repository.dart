@@ -120,6 +120,52 @@ class ServiceOrderRepository {
     }
   }
 
+  // Get service orders with pagination
+  Future<List<ServiceOrder>> getServiceOrdersPaginated({
+    int limit = 20,
+    DocumentSnapshot? lastDocument,
+  }) async {
+    try {
+      Query query = firestore
+          .collection('service_orders')
+          .orderBy('createdAt', descending: true)
+          .limit(limit);
+
+      if (lastDocument != null) {
+        query = query.startAfterDocument(lastDocument);
+      }
+
+      final snapshot = await query.get();
+      return snapshot.docs
+          .map((doc) {
+            try {
+              return ServiceOrder.fromJson(
+                  {...doc.data() as Map<String, dynamic>, 'id': doc.id});
+            } catch (e) {
+              log('Error parsing service order ${doc.id}: $e');
+              return null;
+            }
+          })
+          .whereType<ServiceOrder>()
+          .toList();
+    } catch (e) {
+      log('Error getting paginated service orders: $e');
+      return [];
+    }
+  }
+
+  // Get service order document for pagination
+  Future<DocumentSnapshot?> getServiceOrderDocument(String orderId) async {
+    try {
+      final doc =
+          await firestore.collection('service_orders').doc(orderId).get();
+      return doc.exists ? doc : null;
+    } catch (e) {
+      log('Error getting service order document: $e');
+      return null;
+    }
+  }
+
   // Get service orders by vehicle
   Stream<List<ServiceOrder>> getServiceOrdersByVehicle(String vehicleId) {
     try {

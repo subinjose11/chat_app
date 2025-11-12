@@ -72,6 +72,95 @@ class VehicleRepository {
     }
   }
 
+  // Get vehicles with pagination
+  Future<List<Vehicle>> getVehiclesPaginated({
+    int limit = 20,
+    DocumentSnapshot? lastDocument,
+  }) async {
+    try {
+      Query query = firestore
+          .collection('vehicles')
+          .orderBy('createdAt', descending: true)
+          .limit(limit);
+
+      if (lastDocument != null) {
+        query = query.startAfterDocument(lastDocument);
+      }
+
+      final snapshot = await query.get();
+      return snapshot.docs
+          .map((doc) {
+            try {
+              return Vehicle.fromJson({...doc.data() as Map<String, dynamic>, 'id': doc.id});
+            } catch (e) {
+              log('Error parsing vehicle ${doc.id}: $e');
+              return null;
+            }
+          })
+          .whereType<Vehicle>()
+          .toList();
+    } catch (e) {
+      log('Error getting paginated vehicles: $e');
+      return [];
+    }
+  }
+
+  // Get last document for pagination
+  Future<DocumentSnapshot?> getVehicleDocument(String vehicleId) async {
+    try {
+      final doc = await firestore.collection('vehicles').doc(vehicleId).get();
+      return doc.exists ? doc : null;
+    } catch (e) {
+      log('Error getting vehicle document: $e');
+      return null;
+    }
+  }
+
+  // Search vehicles with pagination
+  Future<List<Vehicle>> searchVehiclesPaginated({
+    required String query,
+    int limit = 20,
+    DocumentSnapshot? lastDocument,
+  }) async {
+    try {
+      Query firestoreQuery = firestore
+          .collection('vehicles')
+          .orderBy('createdAt', descending: true)
+          .limit(limit);
+
+      if (lastDocument != null) {
+        firestoreQuery = firestoreQuery.startAfterDocument(lastDocument);
+      }
+
+      final snapshot = await firestoreQuery.get();
+      final vehicles = snapshot.docs
+          .map((doc) {
+            try {
+              return Vehicle.fromJson({...doc.data() as Map<String, dynamic>, 'id': doc.id});
+            } catch (e) {
+              return null;
+            }
+          })
+          .whereType<Vehicle>()
+          .toList();
+
+      if (query.isEmpty) {
+        return vehicles;
+      }
+
+      final searchLower = query.toLowerCase();
+      return vehicles
+          .where((vehicle) =>
+              vehicle.numberPlate.toLowerCase().contains(searchLower) ||
+              vehicle.make.toLowerCase().contains(searchLower) ||
+              vehicle.model.toLowerCase().contains(searchLower))
+          .toList();
+    } catch (e) {
+      log('Error searching paginated vehicles: $e');
+      return [];
+    }
+  }
+
   // Get vehicles by customer ID
   Stream<List<Vehicle>> getVehiclesByCustomer(String customerId) {
     try {

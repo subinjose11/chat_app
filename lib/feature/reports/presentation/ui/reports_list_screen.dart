@@ -7,17 +7,39 @@ import 'package:chat_app/models/service_order.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 
-// Filter Providers
-final reportDateFilterProvider = StateProvider<String>((ref) => 'all'); // all, today, week, month
-final reportStatusFilterProvider = StateProvider<String>((ref) => 'all'); // all, pending, in_progress, completed, delivered
-
-class ReportsListScreen extends ConsumerWidget {
+class ReportsListScreen extends ConsumerStatefulWidget {
   const ReportsListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ReportsListScreen> createState() => _ReportsListScreenState();
+}
+
+class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      ref.read(reportsPaginationProvider.notifier).loadMore();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final ordersAsync = ref.watch(serviceOrdersStreamProvider);
+    final paginationState = ref.watch(reportsPaginationProvider);
     final dateFilter = ref.watch(reportDateFilterProvider);
     final statusFilter = ref.watch(reportStatusFilterProvider);
 
@@ -46,6 +68,7 @@ class ReportsListScreen extends ConsumerWidget {
                       label: Text('Date: ${_formatFilter(dateFilter)}'),
                       onDeleted: () {
                         ref.read(reportDateFilterProvider.notifier).state = 'all';
+                        ref.read(reportsPaginationProvider.notifier).refresh();
                       },
                     ),
                   if (statusFilter != 'all')
@@ -53,6 +76,7 @@ class ReportsListScreen extends ConsumerWidget {
                       label: Text('Status: ${_formatFilter(statusFilter)}'),
                       onDeleted: () {
                         ref.read(reportStatusFilterProvider.notifier).state = 'all';
+                        ref.read(reportsPaginationProvider.notifier).refresh();
                       },
                     ),
                 ],
@@ -61,114 +85,87 @@ class ReportsListScreen extends ConsumerWidget {
 
           // Reports List
           Expanded(
-            child: ordersAsync.when(
-              data: (orders) {
-                // Apply filters
-                final filteredOrders = _applyFilters(orders, dateFilter, statusFilter);
-
-                if (filteredOrders.isEmpty) {
-                  return Center(
+            child: paginationState.error != null
+                ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.description_outlined,
-                          size: 64,
-                          color: isDark ? AppColors.gray600 : AppColors.gray400,
-                        ),
+                        const Icon(Icons.error_outline, size: 48, color: AppColors.error),
                         const SizedBox(height: 16),
-                        Text(
-                          'No Reports Found',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? AppColors.white : AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          dateFilter != 'all' || statusFilter != 'all'
-                              ? 'Try adjusting your filters'
-                              : 'Create your first service order',
-                          style: TextStyle(
-                            color: isDark ? AppColors.gray400 : AppColors.textSecondary,
-                          ),
+                        Text('Error: ${paginationState.error}'),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            ref.read(reportsPaginationProvider.notifier).refresh();
+                          },
+                          child: const Text('Retry'),
                         ),
                       ],
                     ),
-                  );
-                }
+                  )
+                : paginationState.orders.isEmpty && !paginationState.isLoading
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.description_outlined,
+                              size: 64,
+                              color: isDark ? AppColors.gray600 : AppColors.gray400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No Reports Found',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? AppColors.white : AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              dateFilter != 'all' || statusFilter != 'all'
+                                  ? 'Try adjusting your filters'
+                                  : 'Create your first service order',
+                              style: TextStyle(
+                                color: isDark ? AppColors.gray400 : AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: () async {
+                          ref.read(reportsPaginationProvider.notifier).refresh();
+                        },
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.all(16),
+                          itemCount: paginationState.orders.length + (paginationState.hasMore ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (index == paginationState.orders.length) {
+                              return const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16.0),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
 
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: filteredOrders.length,
-                  itemBuilder: (context, index) {
-                    final order = filteredOrders[index];
-                    return Container(
-                      key: ValueKey('report_card_${order.id}'),
-                      child: _buildReportCard(context, order, isDark),
-                    );
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error_outline, size: 48, color: AppColors.error),
-                    const SizedBox(height: 16),
-                    Text('Error: ${error.toString()}'),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        ref.invalidate(serviceOrdersStreamProvider);
-                      },
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+                            final order = paginationState.orders[index];
+                            return Container(
+                              key: ValueKey('report_card_${order.id}'),
+                              child: _buildReportCard(context, order, isDark),
+                            );
+                          },
+                        ),
+                      ),
           ),
         ],
       ),
     );
   }
 
-  List<ServiceOrder> _applyFilters(List<ServiceOrder> orders, String dateFilter, String statusFilter) {
-    var filtered = orders;
-
-    // Apply date filter
-    if (dateFilter != 'all') {
-      final now = DateTime.now();
-      filtered = filtered.where((order) {
-        if (order.createdAt == null) return false;
-        
-        switch (dateFilter) {
-          case 'today':
-            return order.createdAt!.year == now.year &&
-                   order.createdAt!.month == now.month &&
-                   order.createdAt!.day == now.day;
-          case 'week':
-            final weekAgo = now.subtract(const Duration(days: 7));
-            return order.createdAt!.isAfter(weekAgo);
-          case 'month':
-            return order.createdAt!.year == now.year &&
-                   order.createdAt!.month == now.month;
-          default:
-            return true;
-        }
-      }).toList();
-    }
-
-    // Apply status filter
-    if (statusFilter != 'all') {
-      filtered = filtered.where((order) => order.status == statusFilter).toList();
-    }
-
-    return filtered;
-  }
 
   Widget _buildReportCard(BuildContext context, ServiceOrder order, bool isDark) {
     return GestureDetector(
@@ -414,11 +411,15 @@ class ReportsListScreen extends ConsumerWidget {
               onPressed: () {
                 ref.read(reportDateFilterProvider.notifier).state = 'all';
                 ref.read(reportStatusFilterProvider.notifier).state = 'all';
+                ref.read(reportsPaginationProvider.notifier).refresh();
               },
               child: const Text('Clear All'),
             ),
             ElevatedButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                ref.read(reportsPaginationProvider.notifier).refresh();
+                Navigator.pop(context);
+              },
               child: const Text('Apply'),
             ),
           ],

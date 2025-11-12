@@ -40,6 +40,7 @@ mixin _$ServiceOrder {
   List<String> get beforePhotos => throw _privateConstructorUsedError;
   List<String> get afterPhotos => throw _privateConstructorUsedError;
   String? get notes => throw _privateConstructorUsedError;
+  String? get mechanicNotes => throw _privateConstructorUsedError;
 
   /// Serializes this ServiceOrder to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -73,7 +74,8 @@ abstract class $ServiceOrderCopyWith<$Res> {
       DateTime? completedAt,
       List<String> beforePhotos,
       List<String> afterPhotos,
-      String? notes});
+      String? notes,
+      String? mechanicNotes});
 }
 
 /// @nodoc
@@ -107,6 +109,7 @@ class _$ServiceOrderCopyWithImpl<$Res, $Val extends ServiceOrder>
     Object? beforePhotos = null,
     Object? afterPhotos = null,
     Object? notes = freezed,
+    Object? mechanicNotes = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -173,6 +176,10 @@ class _$ServiceOrderCopyWithImpl<$Res, $Val extends ServiceOrder>
           ? _value.notes
           : notes // ignore: cast_nullable_to_non_nullable
               as String?,
+      mechanicNotes: freezed == mechanicNotes
+          ? _value.mechanicNotes
+          : mechanicNotes // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -201,7 +208,8 @@ abstract class _$$ServiceOrderImplCopyWith<$Res>
       DateTime? completedAt,
       List<String> beforePhotos,
       List<String> afterPhotos,
-      String? notes});
+      String? notes,
+      String? mechanicNotes});
 }
 
 /// @nodoc
@@ -233,6 +241,7 @@ class __$$ServiceOrderImplCopyWithImpl<$Res>
     Object? beforePhotos = null,
     Object? afterPhotos = null,
     Object? notes = freezed,
+    Object? mechanicNotes = freezed,
   }) {
     return _then(_$ServiceOrderImpl(
       id: null == id
@@ -299,6 +308,10 @@ class __$$ServiceOrderImplCopyWithImpl<$Res>
           ? _value.notes
           : notes // ignore: cast_nullable_to_non_nullable
               as String?,
+      mechanicNotes: freezed == mechanicNotes
+          ? _value.mechanicNotes
+          : mechanicNotes // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -322,7 +335,8 @@ class _$ServiceOrderImpl implements _ServiceOrder {
       this.completedAt,
       final List<String> beforePhotos = const [],
       final List<String> afterPhotos = const [],
-      this.notes})
+      this.notes,
+      this.mechanicNotes})
       : _partsUsed = partsUsed,
         _parts = parts,
         _beforePhotos = beforePhotos,
@@ -405,10 +419,12 @@ class _$ServiceOrderImpl implements _ServiceOrder {
 
   @override
   final String? notes;
+  @override
+  final String? mechanicNotes;
 
   @override
   String toString() {
-    return 'ServiceOrder(id: $id, vehicleId: $vehicleId, customerId: $customerId, serviceType: $serviceType, description: $description, partsUsed: $partsUsed, parts: $parts, laborCost: $laborCost, partsCost: $partsCost, totalCost: $totalCost, status: $status, createdAt: $createdAt, completedAt: $completedAt, beforePhotos: $beforePhotos, afterPhotos: $afterPhotos, notes: $notes)';
+    return 'ServiceOrder(id: $id, vehicleId: $vehicleId, customerId: $customerId, serviceType: $serviceType, description: $description, partsUsed: $partsUsed, parts: $parts, laborCost: $laborCost, partsCost: $partsCost, totalCost: $totalCost, status: $status, createdAt: $createdAt, completedAt: $completedAt, beforePhotos: $beforePhotos, afterPhotos: $afterPhotos, notes: $notes, mechanicNotes: $mechanicNotes)';
   }
 
   @override
@@ -443,7 +459,9 @@ class _$ServiceOrderImpl implements _ServiceOrder {
                 .equals(other._beforePhotos, _beforePhotos) &&
             const DeepCollectionEquality()
                 .equals(other._afterPhotos, _afterPhotos) &&
-            (identical(other.notes, notes) || other.notes == notes));
+            (identical(other.notes, notes) || other.notes == notes) &&
+            (identical(other.mechanicNotes, mechanicNotes) ||
+                other.mechanicNotes == mechanicNotes));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -465,7 +483,8 @@ class _$ServiceOrderImpl implements _ServiceOrder {
       completedAt,
       const DeepCollectionEquality().hash(_beforePhotos),
       const DeepCollectionEquality().hash(_afterPhotos),
-      notes);
+      notes,
+      mechanicNotes);
 
   /// Create a copy of ServiceOrder
   /// with the given fields replaced by the non-null parameter values.
@@ -500,7 +519,8 @@ abstract class _ServiceOrder implements ServiceOrder {
       final DateTime? completedAt,
       final List<String> beforePhotos,
       final List<String> afterPhotos,
-      final String? notes}) = _$ServiceOrderImpl;
+      final String? notes,
+      final String? mechanicNotes}) = _$ServiceOrderImpl;
 
   factory _ServiceOrder.fromJson(Map<String, dynamic> json) =
       _$ServiceOrderImpl.fromJson;
@@ -538,6 +558,8 @@ abstract class _ServiceOrder implements ServiceOrder {
   List<String> get afterPhotos;
   @override
   String? get notes;
+  @override
+  String? get mechanicNotes;
 
   /// Create a copy of ServiceOrder
   /// with the given fields replaced by the non-null parameter values.

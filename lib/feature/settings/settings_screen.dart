@@ -67,7 +67,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'AutoTrack Pro',
+                        'RN Auto garage',
                         style: TextStyle(
                           fontSize: 14,
                           color: AppColors.white.withOpacity(0.9),

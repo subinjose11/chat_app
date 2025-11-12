@@ -39,6 +39,7 @@ _$ServiceOrderImpl _$$ServiceOrderImplFromJson(Map<String, dynamic> json) =>
               .toList() ??
           const [],
       notes: json['notes'] as String?,
+      mechanicNotes: json['mechanicNotes'] as String?,
     );
 
 Map<String, dynamic> _$$ServiceOrderImplToJson(_$ServiceOrderImpl instance) =>
@@ -59,4 +60,5 @@ Map<String, dynamic> _$$ServiceOrderImplToJson(_$ServiceOrderImpl instance) =>
       'beforePhotos': instance.beforePhotos,
       'afterPhotos': instance.afterPhotos,
       'notes': instance.notes,
+      'mechanicNotes': instance.mechanicNotes,
     };

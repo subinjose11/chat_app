@@ -62,7 +62,7 @@ class BackupService {
   static Future<void> shareBackup(File backupFile) async {
     await Share.shareXFiles(
       [XFile(backupFile.path)],
-      subject: 'AutoTrack Pro Backup - ${DateTime.now().toString().split(' ')[0]}',
+      subject: 'RN Auto garage Backup - ${DateTime.now().toString().split(' ')[0]}',
     );
   }
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:chat_app/core/styles/app_colors.dart';
 
-// AutoTrack Pro Light Theme
+// RN Auto garage Light Theme
 final lightTheme = ThemeData(
   useMaterial3: true,
   brightness: Brightness.light,
@@ -62,7 +62,7 @@ final lightTheme = ThemeData(
   fontFamily: 'Roboto',
 );
 
-// AutoTrack Pro Dark Theme
+// RN Auto garage Dark Theme
 final darkTheme = ThemeData(
   useMaterial3: true,
   brightness: Brightness.dark,

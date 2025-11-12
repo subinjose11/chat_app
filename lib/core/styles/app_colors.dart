@@ -2,7 +2,7 @@ import 'dart:math';
 import 'dart:ui';
 
 class AppColors {
-  // AutoTrack Pro Primary Colors
+  // RN Auto garage Primary Colors
   static const primaryBlue = Color(0xff1E88E5); // Main blue #1E88E5
   static const primaryColor = Color(0xff1E88E5);
   static const primaryDark = Color(0xff1565C0);
