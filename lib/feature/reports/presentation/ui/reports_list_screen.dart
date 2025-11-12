@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chat_app/core/styles/app_colors.dart';
 import 'package:chat_app/feature/service_orders/presentation/controller/service_order_controller.dart';
+import 'package:chat_app/feature/vehicles/presentation/controller/vehicle_controller.dart';
 import 'package:chat_app/models/service_order.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
@@ -278,13 +279,37 @@ class ReportsListScreen extends ConsumerWidget {
                 Icon(Icons.directions_car, size: 14, color: isDark ? AppColors.gray500 : AppColors.textSecondary),
                 const SizedBox(width: 4),
                 Expanded(
-                  child: Text(
-                    'Vehicle ID: ${order.vehicleId}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? AppColors.gray400 : AppColors.textSecondary,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+                  child: Consumer(
+                    builder: (context, ref, child) {
+                      final vehicleAsync = ref.watch(
+                        vehicleStreamProvider(order.vehicleId),
+                      );
+                      
+                      return vehicleAsync.when(
+                        data: (vehicle) => Text(
+                          vehicle?.numberPlate ?? 'Unknown',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? AppColors.gray400 : AppColors.textSecondary,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        loading: () => Text(
+                          'Loading...',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? AppColors.gray400 : AppColors.textSecondary,
+                          ),
+                        ),
+                        error: (_, __) => Text(
+                          'Unknown',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? AppColors.gray400 : AppColors.textSecondary,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],

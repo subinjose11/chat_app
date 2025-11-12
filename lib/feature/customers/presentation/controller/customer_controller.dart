@@ -37,6 +37,12 @@ final customersStreamProvider = StreamProvider<List<Customer>>((ref) {
   return customerRepository.getCustomersStream();
 });
 
+// Stream Provider for single customer by ID
+final customerStreamProvider = StreamProvider.family<Customer?, String>((ref, customerId) {
+  final customerRepository = ref.watch(customerRepositoryProvider);
+  return customerRepository.getCustomerStream(customerId);
+});
+
 // Search Provider
 final customerSearchQueryProvider = StateProvider<String>((ref) => '');
 

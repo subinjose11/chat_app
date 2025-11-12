@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chat_app/core/styles/app_colors.dart';
 import 'package:chat_app/feature/service_orders/presentation/controller/service_order_controller.dart';
+import 'package:chat_app/feature/customers/presentation/controller/customer_controller.dart';
+import 'package:chat_app/feature/vehicles/presentation/controller/vehicle_controller.dart';
 import 'package:chat_app/models/service_order.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
@@ -10,11 +12,18 @@ import 'package:go_router/go_router.dart';
 final orderDateFilterProvider = StateProvider<String>((ref) => 'all'); // all, today, week, month
 final orderStatusFilterProvider = StateProvider<String>((ref) => 'all'); // all, pending, in_progress, completed, delivered
 
-class ServiceOrdersListScreen extends ConsumerWidget {
+class ServiceOrdersListScreen extends ConsumerStatefulWidget {
   const ServiceOrdersListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ServiceOrdersListScreen> createState() => _ServiceOrdersListScreenState();
+}
+
+class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScreen> {
+  String? _expandedOrderId;
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final ordersAsync = ref.watch(serviceOrdersStreamProvider);
     final dateFilter = ref.watch(orderDateFilterProvider);
@@ -287,20 +296,64 @@ class ServiceOrdersListScreen extends ConsumerWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: _buildInfoItem(
-                          Icons.directions_car,
-                          'Vehicle',
-                          order.vehicleId,
-                          isDark,
+                        child: Consumer(
+                          builder: (context, ref, child) {
+                            final vehicleAsync = ref.watch(
+                              vehicleStreamProvider(order.vehicleId),
+                            );
+                            
+                            return vehicleAsync.when(
+                              data: (vehicle) => _buildInfoItem(
+                                Icons.directions_car,
+                                'Vehicle',
+                                vehicle?.numberPlate ?? 'Unknown',
+                                isDark,
+                              ),
+                              loading: () => _buildInfoItem(
+                                Icons.directions_car,
+                                'Vehicle',
+                                'Loading...',
+                                isDark,
+                              ),
+                              error: (_, __) => _buildInfoItem(
+                                Icons.directions_car,
+                                'Vehicle',
+                                'Unknown',
+                                isDark,
+                              ),
+                            );
+                          },
                         ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: _buildInfoItem(
-                          Icons.person,
-                          'Customer',
-                          order.customerId,
-                          isDark,
+                        child: Consumer(
+                          builder: (context, ref, child) {
+                            final customerAsync = ref.watch(
+                              customerStreamProvider(order.customerId),
+                            );
+                            
+                            return customerAsync.when(
+                              data: (customer) => _buildInfoItem(
+                                Icons.person,
+                                'Customer',
+                                customer?.name ?? 'Unknown',
+                                isDark,
+                              ),
+                              loading: () => _buildInfoItem(
+                                Icons.person,
+                                'Customer',
+                                'Loading...',
+                                isDark,
+                              ),
+                              error: (_, __) => _buildInfoItem(
+                                Icons.person,
+                                'Customer',
+                                'Unknown',
+                                isDark,
+                              ),
+                            );
+                          },
                         ),
                       ),
                     ],
@@ -334,84 +387,139 @@ class ServiceOrdersListScreen extends ConsumerWidget {
                     ],
                   ),
 
-                  // Description (if available)
-                  if (order.description != null && order.description.isNotEmpty) ...[
+                  // Expandable Details Button
+                  if ((order.description.isNotEmpty) || order.partsUsed.isNotEmpty) ...[
                     const SizedBox(height: 12),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.gray800.withOpacity(0.3) : AppColors.gray100,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Description',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isDark ? AppColors.gray400 : AppColors.textSecondary,
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          _expandedOrderId = _expandedOrderId == order.id ? null : order.id;
+                        });
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.gray800.withOpacity(0.3) : AppColors.gray100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _expandedOrderId == order.id ? 'Hide Details' : 'Show Details',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primaryBlue,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            order.description ?? '',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: isDark ? AppColors.white : AppColors.textPrimary,
+                            Icon(
+                              _expandedOrderId == order.id 
+                                  ? Icons.expand_less 
+                                  : Icons.expand_more,
+                              color: AppColors.primaryBlue,
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ],
 
-                  // Parts Used (if available)
-                  if (order.partsUsed.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.gray800.withOpacity(0.3) : AppColors.gray100,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.build,
-                                size: 16,
+                  // Expanded Details
+                  if (_expandedOrderId == order.id) ...[
+                    // Description (if available)
+                    if (order.description.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.gray800.withOpacity(0.3) : AppColors.gray100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Description',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
                                 color: isDark ? AppColors.gray400 : AppColors.textSecondary,
                               ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Parts Used',
-                                style: TextStyle(
-                                  fontSize: 12,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              order.description,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isDark ? AppColors.white : AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    // Parts Used (if available)
+                    if (order.partsUsed.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.gray800.withOpacity(0.3) : AppColors.gray100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.build,
+                                  size: 16,
                                   color: isDark ? AppColors.gray400 : AppColors.textSecondary,
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            order.partsUsed.join(', '),
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: isDark ? AppColors.white : AppColors.textPrimary,
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Parts Used',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? AppColors.gray400 : AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                            const SizedBox(height: 8),
+                            ...order.partsUsed.map((part) => Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.circle,
+                                    size: 6,
+                                    color: isDark ? AppColors.gray500 : AppColors.textSecondary,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      part,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: isDark ? AppColors.white : AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )).toList(),
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ],
               ),

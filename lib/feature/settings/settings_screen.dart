@@ -202,14 +202,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             [
               _buildActionTile(
                 isDark,
-                'Payments',
-                'Track payments and revenue',
-                Icons.payment,
-                () => context.push('/payments'),
-              ),
-              const Divider(height: 1),
-              _buildActionTile(
-                isDark,
                 'Expenses',
                 'Manage business expenses',
                 Icons.receipt_long,

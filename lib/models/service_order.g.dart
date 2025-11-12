@@ -17,6 +17,9 @@ _$ServiceOrderImpl _$$ServiceOrderImplFromJson(Map<String, dynamic> json) =>
               ?.map((e) => e as String)
               .toList() ??
           const [],
+      parts: json['parts'] == null
+          ? const []
+          : const PartItemListConverter().fromJson(json['parts'] as List?),
       laborCost: (json['laborCost'] as num?)?.toDouble() ?? 0.0,
       partsCost: (json['partsCost'] as num?)?.toDouble() ?? 0.0,
       totalCost: (json['totalCost'] as num?)?.toDouble() ?? 0.0,
@@ -46,6 +49,7 @@ Map<String, dynamic> _$$ServiceOrderImplToJson(_$ServiceOrderImpl instance) =>
       'serviceType': instance.serviceType,
       'description': instance.description,
       'partsUsed': instance.partsUsed,
+      'parts': const PartItemListConverter().toJson(instance.parts),
       'laborCost': instance.laborCost,
       'partsCost': instance.partsCost,
       'totalCost': instance.totalCost,

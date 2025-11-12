@@ -137,14 +137,6 @@ class VehicleListScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        heroTag: null,
-        onPressed: () {
-          _showAddVehicleDialog(context, ref);
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Add Vehicle'),
-      ),
     );
   }
 

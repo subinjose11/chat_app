@@ -109,10 +109,18 @@ class AppRouter {
         path: '/report-detail',
         name: 'report-detail',
         builder: (context, state) {
-          final order = state.extra as ServiceOrder?;
-          return ReportDetailScreen(
-            serviceOrder: order ?? const ServiceOrder(),
-          );
+          if (state.extra is Map) {
+            final data = state.extra as Map<String, dynamic>;
+            return ReportDetailScreen(
+              serviceOrder: data['serviceOrder'] as ServiceOrder,
+              vehicle: data['vehicle'] as Vehicle?,
+            );
+          } else {
+            final order = state.extra as ServiceOrder?;
+            return ReportDetailScreen(
+              serviceOrder: order ?? const ServiceOrder(),
+            );
+          }
         },
       ),
       GoRoute(

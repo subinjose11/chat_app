@@ -25,7 +25,11 @@ mixin _$ServiceOrder {
   String get customerId => throw _privateConstructorUsedError;
   String get serviceType => throw _privateConstructorUsedError;
   String get description => throw _privateConstructorUsedError;
-  List<String> get partsUsed => throw _privateConstructorUsedError;
+  List<String> get partsUsed =>
+      throw _privateConstructorUsedError; // Deprecated: kept for backward compatibility
+  @PartItemListConverter()
+  List<PartItem> get parts =>
+      throw _privateConstructorUsedError; // New: parts with individual costs
   double get laborCost => throw _privateConstructorUsedError;
   double get partsCost => throw _privateConstructorUsedError;
   double get totalCost => throw _privateConstructorUsedError;
@@ -60,6 +64,7 @@ abstract class $ServiceOrderCopyWith<$Res> {
       String serviceType,
       String description,
       List<String> partsUsed,
+      @PartItemListConverter() List<PartItem> parts,
       double laborCost,
       double partsCost,
       double totalCost,
@@ -92,6 +97,7 @@ class _$ServiceOrderCopyWithImpl<$Res, $Val extends ServiceOrder>
     Object? serviceType = null,
     Object? description = null,
     Object? partsUsed = null,
+    Object? parts = null,
     Object? laborCost = null,
     Object? partsCost = null,
     Object? totalCost = null,
@@ -127,6 +133,10 @@ class _$ServiceOrderCopyWithImpl<$Res, $Val extends ServiceOrder>
           ? _value.partsUsed
           : partsUsed // ignore: cast_nullable_to_non_nullable
               as List<String>,
+      parts: null == parts
+          ? _value.parts
+          : parts // ignore: cast_nullable_to_non_nullable
+              as List<PartItem>,
       laborCost: null == laborCost
           ? _value.laborCost
           : laborCost // ignore: cast_nullable_to_non_nullable
@@ -182,6 +192,7 @@ abstract class _$$ServiceOrderImplCopyWith<$Res>
       String serviceType,
       String description,
       List<String> partsUsed,
+      @PartItemListConverter() List<PartItem> parts,
       double laborCost,
       double partsCost,
       double totalCost,
@@ -212,6 +223,7 @@ class __$$ServiceOrderImplCopyWithImpl<$Res>
     Object? serviceType = null,
     Object? description = null,
     Object? partsUsed = null,
+    Object? parts = null,
     Object? laborCost = null,
     Object? partsCost = null,
     Object? totalCost = null,
@@ -247,6 +259,10 @@ class __$$ServiceOrderImplCopyWithImpl<$Res>
           ? _value._partsUsed
           : partsUsed // ignore: cast_nullable_to_non_nullable
               as List<String>,
+      parts: null == parts
+          ? _value._parts
+          : parts // ignore: cast_nullable_to_non_nullable
+              as List<PartItem>,
       laborCost: null == laborCost
           ? _value.laborCost
           : laborCost // ignore: cast_nullable_to_non_nullable
@@ -297,6 +313,7 @@ class _$ServiceOrderImpl implements _ServiceOrder {
       this.serviceType = '',
       this.description = '',
       final List<String> partsUsed = const [],
+      @PartItemListConverter() final List<PartItem> parts = const [],
       this.laborCost = 0.0,
       this.partsCost = 0.0,
       this.totalCost = 0.0,
@@ -307,6 +324,7 @@ class _$ServiceOrderImpl implements _ServiceOrder {
       final List<String> afterPhotos = const [],
       this.notes})
       : _partsUsed = partsUsed,
+        _parts = parts,
         _beforePhotos = beforePhotos,
         _afterPhotos = afterPhotos;
 
@@ -337,6 +355,19 @@ class _$ServiceOrderImpl implements _ServiceOrder {
     return EqualUnmodifiableListView(_partsUsed);
   }
 
+// Deprecated: kept for backward compatibility
+  final List<PartItem> _parts;
+// Deprecated: kept for backward compatibility
+  @override
+  @JsonKey()
+  @PartItemListConverter()
+  List<PartItem> get parts {
+    if (_parts is EqualUnmodifiableListView) return _parts;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_parts);
+  }
+
+// New: parts with individual costs
   @override
   @JsonKey()
   final double laborCost;
@@ -377,7 +408,7 @@ class _$ServiceOrderImpl implements _ServiceOrder {
 
   @override
   String toString() {
-    return 'ServiceOrder(id: $id, vehicleId: $vehicleId, customerId: $customerId, serviceType: $serviceType, description: $description, partsUsed: $partsUsed, laborCost: $laborCost, partsCost: $partsCost, totalCost: $totalCost, status: $status, createdAt: $createdAt, completedAt: $completedAt, beforePhotos: $beforePhotos, afterPhotos: $afterPhotos, notes: $notes)';
+    return 'ServiceOrder(id: $id, vehicleId: $vehicleId, customerId: $customerId, serviceType: $serviceType, description: $description, partsUsed: $partsUsed, parts: $parts, laborCost: $laborCost, partsCost: $partsCost, totalCost: $totalCost, status: $status, createdAt: $createdAt, completedAt: $completedAt, beforePhotos: $beforePhotos, afterPhotos: $afterPhotos, notes: $notes)';
   }
 
   @override
@@ -396,6 +427,7 @@ class _$ServiceOrderImpl implements _ServiceOrder {
                 other.description == description) &&
             const DeepCollectionEquality()
                 .equals(other._partsUsed, _partsUsed) &&
+            const DeepCollectionEquality().equals(other._parts, _parts) &&
             (identical(other.laborCost, laborCost) ||
                 other.laborCost == laborCost) &&
             (identical(other.partsCost, partsCost) ||
@@ -424,6 +456,7 @@ class _$ServiceOrderImpl implements _ServiceOrder {
       serviceType,
       description,
       const DeepCollectionEquality().hash(_partsUsed),
+      const DeepCollectionEquality().hash(_parts),
       laborCost,
       partsCost,
       totalCost,
@@ -458,6 +491,7 @@ abstract class _ServiceOrder implements ServiceOrder {
       final String serviceType,
       final String description,
       final List<String> partsUsed,
+      @PartItemListConverter() final List<PartItem> parts,
       final double laborCost,
       final double partsCost,
       final double totalCost,
@@ -482,7 +516,10 @@ abstract class _ServiceOrder implements ServiceOrder {
   @override
   String get description;
   @override
-  List<String> get partsUsed;
+  List<String> get partsUsed; // Deprecated: kept for backward compatibility
+  @override
+  @PartItemListConverter()
+  List<PartItem> get parts; // New: parts with individual costs
   @override
   double get laborCost;
   @override

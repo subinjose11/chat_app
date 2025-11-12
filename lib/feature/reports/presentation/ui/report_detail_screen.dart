@@ -4,6 +4,7 @@ import 'package:chat_app/core/styles/app_colors.dart';
 import 'package:chat_app/models/service_order.dart';
 import 'package:chat_app/models/vehicle.dart';
 import 'package:chat_app/feature/service_orders/presentation/controller/service_order_controller.dart';
+import 'package:chat_app/feature/customers/presentation/controller/customer_controller.dart';
 import 'package:chat_app/core/services/pdf_service.dart';
 import 'package:chat_app/core/services/communication_service.dart';
 import 'package:intl/intl.dart';
@@ -204,6 +205,43 @@ class _ReportDetailScreenState extends ConsumerState<ReportDetailScreen> {
             ),
             const SizedBox(height: 24),
 
+            // Customer Information
+            Consumer(
+              builder: (context, ref, child) {
+                final customerAsync = ref.watch(
+                  customerStreamProvider(widget.serviceOrder.customerId),
+                );
+                
+                return customerAsync.when(
+                  data: (customer) {
+                    if (customer == null) {
+                      return const SizedBox.shrink();
+                    }
+                    
+                    return Column(
+                      children: [
+                        _buildInfoSection(
+                          isDark,
+                          'Customer Information',
+                          [
+                            _buildInfoRow(Icons.person, 'Name', customer.name),
+                            _buildInfoRow(Icons.phone, 'Phone', customer.phone),
+                            if (customer.email.isNotEmpty)
+                              _buildInfoRow(Icons.email, 'Email', customer.email),
+                            if (customer.address != null && customer.address!.isNotEmpty)
+                              _buildInfoRow(Icons.location_on, 'Address', customer.address!),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    );
+                  },
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
+                );
+              },
+            ),
+
             // Vehicle Information
             _buildInfoSection(
               isDark,
@@ -233,21 +271,143 @@ class _ReportDetailScreenState extends ConsumerState<ReportDetailScreen> {
             const SizedBox(height: 16),
 
             // Cost Breakdown
-            _buildInfoSection(
-              isDark,
-              'Cost Breakdown',
-              [
-                _buildInfoRow(Icons.build, 'Labor Cost', '\$${widget.serviceOrder.laborCost.toStringAsFixed(2)}'),
-                _buildInfoRow(Icons.shopping_cart, 'Parts Cost', '\$${widget.serviceOrder.partsCost.toStringAsFixed(2)}'),
-                const Divider(),
-                _buildInfoRow(Icons.attach_money, 'Total Cost', '\$${widget.serviceOrder.totalCost.toStringAsFixed(2)}',
-                  valueStyle: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryBlue,
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.cardBackgroundDark : AppColors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDark ? Colors.black26 : AppColors.gray300.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
-                ),
-              ],
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Cost Breakdown',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? AppColors.white : AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Labor Cost
+                  _buildInfoRow(Icons.engineering, 'Labor Cost', '\$${widget.serviceOrder.laborCost.toStringAsFixed(2)}'),
+                  
+                  // Parts Breakdown
+                  if (widget.serviceOrder.parts.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Parts:',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? AppColors.white : AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ...widget.serviceOrder.parts.map((part) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8, left: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.build_circle, size: 16, color: AppColors.gray500),
+                              const SizedBox(width: 8),
+                              Text(
+                                part.name,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            '\$${part.cost.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: isDark ? AppColors.white : AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )).toList(),
+                    const Padding(
+                      padding: EdgeInsets.only(left: 16, right: 16, top: 4, bottom: 8),
+                      child: Divider(height: 1),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16, bottom: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Total Parts:',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? AppColors.white : AppColors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            '\$${widget.serviceOrder.partsCost.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? AppColors.white : AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  
+                  // Total Cost
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.attach_money, size: 20, color: AppColors.gray500),
+                          SizedBox(width: 12),
+                          Text(
+                            'Total Cost',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        '\$${widget.serviceOrder.totalCost.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryBlue,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
 

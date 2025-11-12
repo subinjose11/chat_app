@@ -4,22 +4,411 @@ import 'package:chat_app/core/styles/app_colors.dart';
 import 'package:chat_app/models/vehicle.dart';
 import 'package:chat_app/models/service_order.dart';
 import 'package:chat_app/feature/service_orders/presentation/controller/service_order_controller.dart';
+import 'package:chat_app/feature/customers/presentation/controller/customer_controller.dart';
+import 'package:chat_app/feature/vehicles/presentation/controller/vehicle_controller.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 
 void _showEditDialog(BuildContext context, WidgetRef ref, Vehicle vehicle) {
-  // TODO: Implement edit dialog with form
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('Edit functionality - To be implemented')),
+  showDialog(
+    context: context,
+    builder: (context) => _EditVehicleDialog(vehicle: vehicle),
   );
 }
 
-void _showDeleteConfirmation(BuildContext context, WidgetRef ref, Vehicle vehicle) {
+class _EditVehicleDialog extends ConsumerStatefulWidget {
+  final Vehicle vehicle;
+
+  const _EditVehicleDialog({required this.vehicle});
+
+  @override
+  ConsumerState<_EditVehicleDialog> createState() => _EditVehicleDialogState();
+}
+
+class _EditVehicleDialogState extends ConsumerState<_EditVehicleDialog> {
+  final _formKey = GlobalKey<FormState>();
+
+  // Customer fields
+  late final TextEditingController _customerNameController;
+  late final TextEditingController _customerPhoneController;
+  late final TextEditingController _customerEmailController;
+  late final TextEditingController _customerAddressController;
+
+  // Vehicle fields
+  late final TextEditingController _numberPlateController;
+  late final TextEditingController _makeController;
+  late final TextEditingController _modelController;
+  late final TextEditingController _yearController;
+  late final TextEditingController _vinController;
+  late final TextEditingController _colorController;
+  late final TextEditingController _mileageController;
+  late String? _fuelType;
+
+  final List<String> _fuelTypes = [
+    'Petrol',
+    'Diesel',
+    'Electric',
+    'Hybrid',
+    'CNG'
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize customer controllers (will be populated from async data)
+    _customerNameController = TextEditingController();
+    _customerPhoneController = TextEditingController();
+    _customerEmailController = TextEditingController();
+    _customerAddressController = TextEditingController();
+
+    // Initialize vehicle controllers
+    _numberPlateController =
+        TextEditingController(text: widget.vehicle.numberPlate);
+    _makeController = TextEditingController(text: widget.vehicle.make);
+    _modelController = TextEditingController(text: widget.vehicle.model);
+    _yearController = TextEditingController(text: widget.vehicle.year);
+    _vinController = TextEditingController(text: widget.vehicle.vin);
+    _colorController = TextEditingController(text: widget.vehicle.color);
+    _mileageController =
+        TextEditingController(text: widget.vehicle.mileage?.toString() ?? '');
+    _fuelType = widget.vehicle.fuelType;
+  }
+
+  @override
+  void dispose() {
+    _customerNameController.dispose();
+    _customerPhoneController.dispose();
+    _customerEmailController.dispose();
+    _customerAddressController.dispose();
+    _numberPlateController.dispose();
+    _makeController.dispose();
+    _modelController.dispose();
+    _yearController.dispose();
+    _vinController.dispose();
+    _colorController.dispose();
+    _mileageController.dispose();
+    super.dispose();
+  }
+
+  void _saveChanges(String customerId) async {
+    if (_formKey.currentState!.validate()) {
+      // Update customer info
+      final customerAsync =
+          await ref.read(customerStreamProvider(customerId).future);
+      if (customerAsync != null) {
+        final updatedCustomer = customerAsync.copyWith(
+          name: _customerNameController.text,
+          phone: _customerPhoneController.text,
+          email: _customerEmailController.text,
+          address: _customerAddressController.text.isEmpty
+              ? null
+              : _customerAddressController.text,
+        );
+        ref
+            .read(customerControllerProvider)
+            .updateCustomer(context, updatedCustomer);
+      }
+
+      // Update vehicle info
+      final updatedVehicle = widget.vehicle.copyWith(
+        numberPlate: _numberPlateController.text,
+        make: _makeController.text,
+        model: _modelController.text,
+        year: _yearController.text,
+        vin: _vinController.text.isEmpty ? null : _vinController.text,
+        color: _colorController.text.isEmpty ? null : _colorController.text,
+        mileage: _mileageController.text.isEmpty
+            ? null
+            : int.tryParse(_mileageController.text),
+        fuelType: _fuelType,
+      );
+
+      // Call vehicle controller to update
+      ref
+          .read(vehicleControllerProvider)
+          .updateVehicle(context, updatedVehicle);
+
+      if (mounted) {
+        Navigator.pop(context, updatedVehicle);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final customerAsync =
+        ref.watch(customerStreamProvider(widget.vehicle.customerId));
+
+    // Load customer data when available
+    customerAsync.whenData((customer) {
+      if (customer != null && _customerNameController.text.isEmpty) {
+        _customerNameController.text = customer.name;
+        _customerPhoneController.text = customer.phone;
+        _customerEmailController.text = customer.email;
+        _customerAddressController.text = customer.address ?? '';
+      }
+    });
+
+    return AlertDialog(
+      title: const Text('Edit Vehicle & Customer'),
+      content: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.9,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Customer Information Section
+                Text(
+                  'Customer Information',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? AppColors.white : AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Customer Name
+                TextFormField(
+                  controller: _customerNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Customer Name',
+                    prefixIcon: Icon(Icons.person),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter customer name';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Customer Phone
+                TextFormField(
+                  controller: _customerPhoneController,
+                  decoration: const InputDecoration(
+                    labelText: 'Phone Number',
+                    prefixIcon: Icon(Icons.phone),
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter phone number';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Customer Email (Optional)
+                TextFormField(
+                  controller: _customerEmailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email (Optional)',
+                    prefixIcon: Icon(Icons.email),
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 16),
+
+                // Customer Address (Optional)
+                TextFormField(
+                  controller: _customerAddressController,
+                  decoration: const InputDecoration(
+                    labelText: 'Address (Optional)',
+                    prefixIcon: Icon(Icons.location_on),
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 24),
+
+                // Vehicle Specifications Section
+                Text(
+                  'Vehicle Specifications',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? AppColors.white : AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Number Plate
+                TextFormField(
+                  controller: _numberPlateController,
+                  decoration: const InputDecoration(
+                    labelText: 'Number Plate',
+                    prefixIcon: Icon(Icons.confirmation_number),
+                    border: OutlineInputBorder(),
+                  ),
+                  textCapitalization: TextCapitalization.characters,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter number plate';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Make
+                TextFormField(
+                  controller: _makeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Make/Brand',
+                    prefixIcon: Icon(Icons.directions_car),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter make';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Model
+                TextFormField(
+                  controller: _modelController,
+                  decoration: const InputDecoration(
+                    labelText: 'Model',
+                    prefixIcon: Icon(Icons.car_repair),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter model';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Year
+                TextFormField(
+                  controller: _yearController,
+                  decoration: const InputDecoration(
+                    labelText: 'Year',
+                    prefixIcon: Icon(Icons.calendar_today),
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter year';
+                    }
+                    final year = int.tryParse(value);
+                    if (year == null ||
+                        year < 1900 ||
+                        year > DateTime.now().year + 1) {
+                      return 'Please enter a valid year';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Fuel Type
+                DropdownButtonFormField<String>(
+                  value: _fuelType,
+                  decoration: const InputDecoration(
+                    labelText: 'Fuel Type',
+                    prefixIcon: Icon(Icons.local_gas_station),
+                    border: OutlineInputBorder(),
+                  ),
+                  items: _fuelTypes.map((type) {
+                    return DropdownMenuItem(
+                      value: type,
+                      child: Text(type),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _fuelType = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // VIN (Optional)
+                TextFormField(
+                  controller: _vinController,
+                  decoration: const InputDecoration(
+                    labelText: 'VIN (Optional)',
+                    prefixIcon: Icon(Icons.numbers),
+                    border: OutlineInputBorder(),
+                  ),
+                  textCapitalization: TextCapitalization.characters,
+                ),
+                const SizedBox(height: 16),
+
+                // Color (Optional)
+                TextFormField(
+                  controller: _colorController,
+                  decoration: const InputDecoration(
+                    labelText: 'Color (Optional)',
+                    prefixIcon: Icon(Icons.palette),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Mileage (Optional)
+                TextFormField(
+                  controller: _mileageController,
+                  decoration: const InputDecoration(
+                    labelText: 'Mileage (km) (Optional)',
+                    prefixIcon: Icon(Icons.speed),
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value != null && value.isNotEmpty) {
+                      final mileage = int.tryParse(value);
+                      if (mileage == null || mileage < 0) {
+                        return 'Please enter a valid mileage';
+                      }
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () => _saveChanges(widget.vehicle.customerId),
+          child: const Text('Save Changes'),
+        ),
+      ],
+    );
+  }
+}
+
+void _showDeleteConfirmation(
+    BuildContext context, WidgetRef ref, Vehicle vehicle) {
   showDialog(
     context: context,
     builder: (context) => AlertDialog(
       title: const Text('Delete Vehicle'),
-      content: const Text('Are you sure you want to delete this vehicle? This action cannot be undone.'),
+      content: const Text(
+          'Are you sure you want to delete this vehicle? This action cannot be undone.'),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
@@ -52,9 +441,10 @@ class VehicleDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // Fetch actual service orders from Firebase
-    final serviceOrdersAsync = ref.watch(vehicleServiceOrdersStreamProvider(vehicle.id));
+    final serviceOrdersAsync =
+        ref.watch(vehicleServiceOrdersStreamProvider(vehicle.id));
 
     return Scaffold(
       appBar: AppBar(
@@ -110,12 +500,60 @@ class VehicleDetailScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Customer Info Card
-                  _buildInfoSection(
-                    isDark,
-                    'Customer Information',
-                    [
-                      _buildInfoRow(Icons.person, 'Customer ID', vehicle.customerId),
-                    ],
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final customerAsync = ref.watch(
+                        customerStreamProvider(vehicle.customerId),
+                      );
+
+                      return customerAsync.when(
+                        data: (customer) {
+                          if (customer == null) {
+                            return _buildInfoSection(
+                              isDark,
+                              'Customer Information',
+                              [
+                                _buildInfoRow(Icons.person, 'Customer ID',
+                                    vehicle.customerId),
+                              ],
+                            );
+                          }
+
+                          return _buildInfoSection(
+                            isDark,
+                            'Customer Information',
+                            [
+                              _buildInfoRow(
+                                  Icons.person, 'Name', customer.name),
+                              _buildInfoRow(
+                                  Icons.phone, 'Phone', customer.phone),
+                              if (customer.email.isNotEmpty)
+                                _buildInfoRow(
+                                    Icons.email, 'Email', customer.email),
+                              if (customer.address != null &&
+                                  customer.address!.isNotEmpty)
+                                _buildInfoRow(Icons.location_on, 'Address',
+                                    customer.address!),
+                            ],
+                          );
+                        },
+                        loading: () => _buildInfoSection(
+                          isDark,
+                          'Customer Information',
+                          [
+                            _buildInfoRow(Icons.person, 'Loading...', ''),
+                          ],
+                        ),
+                        error: (_, __) => _buildInfoSection(
+                          isDark,
+                          'Customer Information',
+                          [
+                            _buildInfoRow(Icons.person, 'Customer ID',
+                                vehicle.customerId),
+                          ],
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 16),
 
@@ -137,8 +575,8 @@ class VehicleDetailScreen extends ConsumerWidget {
                       if (vehicle.color != null)
                         _buildInfoRow(Icons.palette, 'Color', vehicle.color!),
                       if (vehicle.mileage != null)
-                        _buildInfoRow(Icons.speed, 'Mileage',
-                            '${vehicle.mileage} km'),
+                        _buildInfoRow(
+                            Icons.speed, 'Mileage', '${vehicle.mileage} km'),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -151,7 +589,8 @@ class VehicleDetailScreen extends ConsumerWidget {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: isDark ? AppColors.white : AppColors.textPrimary,
+                          color:
+                              isDark ? AppColors.white : AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -161,7 +600,8 @@ class VehicleDetailScreen extends ConsumerWidget {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: _getStatusColor(vehicle.serviceStatus).withOpacity(0.1),
+                          color: _getStatusColor(vehicle.serviceStatus)
+                              .withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -186,7 +626,8 @@ class VehicleDetailScreen extends ConsumerWidget {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? AppColors.white : AppColors.textPrimary,
+                          color:
+                              isDark ? AppColors.white : AppColors.textPrimary,
                         ),
                       ),
                       TextButton.icon(
@@ -199,7 +640,7 @@ class VehicleDetailScreen extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Display service orders from Firebase
                   serviceOrdersAsync.when(
                     data: (orders) {
@@ -230,7 +671,7 @@ class VehicleDetailScreen extends ConsumerWidget {
                           ),
                         );
                       }
-                      
+
                       return ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
@@ -239,7 +680,8 @@ class VehicleDetailScreen extends ConsumerWidget {
                           final service = orders[index];
                           return Container(
                             key: ValueKey('service_order_${service.id}'),
-                            child: _buildTimelineItem(isDark, service, index),
+                            child: _buildTimelineItem(
+                                isDark, service, index, context),
                           );
                         },
                       );
@@ -250,29 +692,44 @@ class VehicleDetailScreen extends ConsumerWidget {
                         child: CircularProgressIndicator(),
                       ),
                     ),
-                    error: (error, stack) => Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(32),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              size: 48,
-                              color: AppColors.error,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Error loading service history',
-                              style: TextStyle(
-                                color: isDark
-                                    ? AppColors.gray400
-                                    : AppColors.textSecondary,
+                    error: (error, stack) {
+                      // Log the actual error for debugging
+                      print('❌ Error loading service history: $error');
+                      print('Stack trace: $stack');
+
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 48,
+                                color: AppColors.error,
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 16),
+                              Text(
+                                'Error loading service history',
+                                style: TextStyle(
+                                  color: isDark
+                                      ? AppColors.gray400
+                                      : AppColors.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                error.toString(),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.error.withOpacity(0.8),
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 24),
                 ],
@@ -287,9 +744,8 @@ class VehicleDetailScreen extends ConsumerWidget {
           color: isDark ? AppColors.cardBackgroundDark : AppColors.white,
           boxShadow: [
             BoxShadow(
-              color: isDark
-                  ? Colors.black26
-                  : AppColors.gray300.withOpacity(0.3),
+              color:
+                  isDark ? Colors.black26 : AppColors.gray300.withOpacity(0.3),
               blurRadius: 8,
               offset: const Offset(0, -2),
             ),
@@ -335,9 +791,7 @@ class VehicleDetailScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: isDark
-                ? Colors.black26
-                : AppColors.gray300.withOpacity(0.3),
+            color: isDark ? Colors.black26 : AppColors.gray300.withOpacity(0.3),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -399,6 +853,7 @@ class VehicleDetailScreen extends ConsumerWidget {
     bool isDark,
     ServiceOrder service,
     int index,
+    BuildContext context,
   ) {
     return IntrinsicHeight(
       child: Row(
@@ -427,60 +882,85 @@ class VehicleDetailScreen extends ConsumerWidget {
           const SizedBox(width: 16),
           // Service info
           Expanded(
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 20),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.cardBackgroundDark : AppColors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isDark ? AppColors.gray700 : AppColors.gray300,
+            child: GestureDetector(
+              onTap: () {
+                // Navigate to report detail screen
+                context.push('/report-detail', extra: {
+                  'serviceOrder': service,
+                  'vehicle': vehicle,
+                });
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 20),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color:
+                      isDark ? AppColors.cardBackgroundDark : AppColors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? AppColors.gray700 : AppColors.gray300,
+                  ),
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        service.serviceType,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? AppColors.white : AppColors.textPrimary,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          service.serviceType,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: isDark
+                                ? AppColors.white
+                                : AppColors.textPrimary,
+                          ),
                         ),
-                      ),
-                      Text(
-                        '\$${service.totalCost.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryBlue,
+                        Row(
+                          children: [
+                            Text(
+                              '\$${service.totalCost.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryBlue,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(
+                              Icons.chevron_right,
+                              color: isDark
+                                  ? AppColors.gray500
+                                  : AppColors.gray400,
+                              size: 20,
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    service.description,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark
-                          ? AppColors.gray400
-                          : AppColors.textSecondary,
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  if (service.createdAt != null)
+                    const SizedBox(height: 8),
                     Text(
-                      DateFormat('MMM dd, yyyy').format(service.createdAt!),
+                      service.description,
                       style: TextStyle(
-                        fontSize: 12,
-                        color: isDark ? AppColors.gray500 : AppColors.textHint,
+                        fontSize: 14,
+                        color: isDark
+                            ? AppColors.gray400
+                            : AppColors.textSecondary,
                       ),
                     ),
-                ],
+                    const SizedBox(height: 8),
+                    if (service.createdAt != null)
+                      Text(
+                        DateFormat('MMM dd, yyyy').format(service.createdAt!),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color:
+                              isDark ? AppColors.gray500 : AppColors.textHint,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -502,4 +982,3 @@ class VehicleDetailScreen extends ConsumerWidget {
     }
   }
 }
-

@@ -81,6 +81,30 @@ class CustomerRepository {
     }
   }
 
+  // Get single customer as stream
+  Stream<Customer?> getCustomerStream(String customerId) {
+    try {
+      return firestore
+          .collection('customers')
+          .doc(customerId)
+          .snapshots()
+          .map((doc) {
+        if (doc.exists) {
+          try {
+            return Customer.fromJson({...doc.data()!, 'id': doc.id});
+          } catch (e) {
+            log('Error parsing customer: $e');
+            return null;
+          }
+        }
+        return null;
+      });
+    } catch (e) {
+      log('Error getting customer stream: $e');
+      return Stream.value(null);
+    }
+  }
+
   // Update Customer
   Future<void> updateCustomer(BuildContext context, Customer customer) async {
     try {

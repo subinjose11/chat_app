@@ -5,6 +5,7 @@ import 'package:chat_app/core/styles/app_colors.dart';
 import 'package:chat_app/models/service_order.dart';
 import 'package:chat_app/models/vehicle.dart';
 import 'package:chat_app/models/customer.dart';
+import 'package:chat_app/models/part_item.dart';
 import 'package:chat_app/feature/service_orders/presentation/controller/service_order_controller.dart';
 import 'package:chat_app/feature/vehicles/presentation/controller/vehicle_controller.dart';
 import 'package:chat_app/feature/customers/presentation/controller/customer_controller.dart';
@@ -36,9 +37,15 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
   final _partsCostController = TextEditingController();
   final _notesController = TextEditingController();
   
+  // Parts breakdown
+  List<PartItem> _parts = [];
+  final _partNameController = TextEditingController();
+  final _partCostController = TextEditingController();
+  
   // Vehicle & Customer fields
   final _customerNameController = TextEditingController();
   final _customerPhoneController = TextEditingController();
+  final _customerAddressController = TextEditingController();
   final _vehicleNumberController = TextEditingController();
   final _vehicleMakeController = TextEditingController();
   final _vehicleModelController = TextEditingController();
@@ -47,7 +54,8 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
   final ImagePicker _picker = ImagePicker();
   
   // Dropdown values
-  String _selectedServiceType = 'Oil Change';
+  String? _selectedServiceType;
+  final _customServiceTypeController = TextEditingController();
   String _selectedWorkStatus = 'pending';
   String _selectedFuelType = 'Petrol';
   DateTime _selectedDate = DateTime.now();
@@ -102,6 +110,9 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
       _selectedWorkStatus = order.status;
       _selectedDate = order.createdAt ?? DateTime.now();
       
+      // Load parts breakdown
+      _parts = List<PartItem>.from(order.parts);
+      
       // Load vehicle and customer details for editing
       _loadExistingData();
     } else if (widget.vehicle != null) {
@@ -123,8 +134,44 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
 
   double get _totalCost {
     final labor = double.tryParse(_laborCostController.text) ?? 0;
-    final parts = double.tryParse(_partsCostController.text) ?? 0;
+    final parts = _parts.fold<double>(0, (sum, part) => sum + part.cost);
     return labor + parts;
+  }
+  
+  double get _totalPartsCost {
+    return _parts.fold<double>(0, (sum, part) => sum + part.cost);
+  }
+  
+  void _addPart() {
+    if (_partNameController.text.isEmpty || _partCostController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter part name and cost')),
+      );
+      return;
+    }
+    
+    final cost = double.tryParse(_partCostController.text);
+    if (cost == null || cost < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid cost')),
+      );
+      return;
+    }
+    
+    setState(() {
+      _parts.add(PartItem(
+        name: _partNameController.text,
+        cost: cost,
+      ));
+      _partNameController.clear();
+      _partCostController.clear();
+    });
+  }
+  
+  void _removePart(int index) {
+    setState(() {
+      _parts.removeAt(index);
+    });
   }
 
   Future<void> _pickImage(bool isBefore) async {
@@ -196,6 +243,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
             name: _customerNameController.text,
             phone: _customerPhoneController.text,
             email: '',
+            address: _customerAddressController.text.isNotEmpty ? _customerAddressController.text : null,
             createdAt: DateTime.now(),
           );
           
@@ -220,13 +268,19 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
           await Future.delayed(const Duration(milliseconds: 500));
         }
         
+        // Determine final service type
+        final finalServiceType = _selectedServiceType == 'Other' 
+            ? _customServiceTypeController.text 
+            : _selectedServiceType!;
+        
         final serviceOrder = ServiceOrder(
           id: widget.existingOrder?.id ?? '', // Keep existing ID or empty for new
-          serviceType: _selectedServiceType,
+          serviceType: finalServiceType,
           description: _descriptionController.text,
-          partsUsed: _partsUsedController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
-          laborCost: double.parse(_laborCostController.text),
-          partsCost: double.parse(_partsCostController.text),
+          partsUsed: _parts.map((p) => p.name).toList(), // Keep for backward compatibility
+          parts: _parts, // New: parts with individual costs
+          laborCost: double.tryParse(_laborCostController.text) ?? 0.0,
+          partsCost: _totalPartsCost,
           totalCost: _totalCost,
           vehicleId: vehicleId,
           customerId: customerId,
@@ -343,6 +397,19 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                 ),
                 const SizedBox(height: 16),
                 
+                // Customer Address
+                TextFormField(
+                  controller: _customerAddressController,
+                  decoration: const InputDecoration(
+                    labelText: 'Customer Address',
+                    prefixIcon: Icon(Icons.location_on),
+                    hintText: 'Enter address',
+                  ),
+                  maxLines: 2,
+                  keyboardType: TextInputType.streetAddress,
+                ),
+                const SizedBox(height: 16),
+                
                 // Vehicle Number
                 TextFormField(
                   controller: _vehicleNumberController,
@@ -456,6 +523,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Service Type',
                   prefixIcon: Icon(Icons.build),
+                  hintText: 'Select service type',
                 ),
                 items: _serviceTypes.map((type) {
                   return DropdownMenuItem(
@@ -465,11 +533,36 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                 }).toList(),
                 onChanged: (value) {
                   setState(() {
-                    _selectedServiceType = value!;
+                    _selectedServiceType = value;
                   });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Please select a service type';
+                  }
+                  return null;
                 },
               ),
               const SizedBox(height: 16),
+              
+              // Custom Service Type Input (shown when "Other" is selected)
+              if (_selectedServiceType == 'Other') ...[
+                TextFormField(
+                  controller: _customServiceTypeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Custom Service Type',
+                    hintText: 'Enter custom service type',
+                    prefixIcon: Icon(Icons.edit),
+                  ),
+                  validator: (value) {
+                    if (_selectedServiceType == 'Other' && (value == null || value.isEmpty)) {
+                      return 'Please enter custom service type';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // Description
               TextFormField(
@@ -486,18 +579,6 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                   }
                   return null;
                 },
-              ),
-              const SizedBox(height: 16),
-
-              // Parts Used
-              TextFormField(
-                controller: _partsUsedController,
-                decoration: const InputDecoration(
-                  labelText: 'Parts Used',
-                  hintText: 'Comma separated (e.g., Oil filter, Brake pads)',
-                  prefixIcon: Icon(Icons.settings),
-                ),
-                maxLines: 2,
               ),
               const SizedBox(height: 16),
 
@@ -532,60 +613,151 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                 ),
               ),
               const SizedBox(height: 16),
+              
+              // Labor Cost
+              TextFormField(
+                controller: _laborCostController,
+                decoration: const InputDecoration(
+                  labelText: 'Labor Cost',
+                  hintText: '0.00',
+                  prefixIcon: Icon(Icons.engineering),
+                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                ],
+                onChanged: (value) {
+                  setState(() {}); // Update total
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Required';
+                  }
+                  if (double.tryParse(value) == null) {
+                    return 'Invalid';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              
+              // Parts Breakdown Section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Parts Breakdown',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? AppColors.white : AppColors.textPrimary,
+                    ),
+                  ),
+                  if (_parts.isNotEmpty)
+                    Text(
+                      'Total: \$${_totalPartsCost.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryBlue,
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              
+              // Parts List
+              if (_parts.isNotEmpty)
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: isDark ? AppColors.gray700 : AppColors.gray300,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _parts.length,
+                    separatorBuilder: (context, index) => Divider(
+                      height: 1,
+                      color: isDark ? AppColors.gray700 : AppColors.gray300,
+                    ),
+                    itemBuilder: (context, index) {
+                      final part = _parts[index];
+                      return ListTile(
+                        dense: true,
+                        leading: const Icon(Icons.build_circle, size: 20),
+                        title: Text(
+                          part.name,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark ? AppColors.white : AppColors.textPrimary,
+                          ),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '\$${part.cost.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? AppColors.white : AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              icon: const Icon(Icons.delete, size: 20),
+                              color: AppColors.error,
+                              onPressed: () => _removePart(index),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              const SizedBox(height: 12),
+              
+              // Add Part Form
               Row(
                 children: [
                   Expanded(
+                    flex: 2,
                     child: TextFormField(
-                      controller: _laborCostController,
+                      controller: _partNameController,
                       decoration: const InputDecoration(
-                        labelText: 'Labor Cost',
-                        hintText: '0.00',
-                        prefixIcon: Icon(Icons.attach_money),
+                        labelText: 'Part Name',
+                        hintText: 'e.g., Oil Filter',
+                        isDense: true,
                       ),
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
-                      ],
-                      onChanged: (value) {
-                        setState(() {}); // Update total
-                      },
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Required';
-                        }
-                        if (double.tryParse(value) == null) {
-                          return 'Invalid';
-                        }
-                        return null;
-                      },
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: TextFormField(
-                      controller: _partsCostController,
+                      controller: _partCostController,
                       decoration: const InputDecoration(
-                        labelText: 'Parts Cost',
+                        labelText: 'Cost',
                         hintText: '0.00',
-                        prefixIcon: Icon(Icons.attach_money),
+                        prefixText: '\$ ',
+                        isDense: true,
                       ),
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
                       ],
-                      onChanged: (value) {
-                        setState(() {}); // Update total
-                      },
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Required';
-                        }
-                        if (double.tryParse(value) == null) {
-                          return 'Invalid';
-                        }
-                        return null;
-                      },
                     ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: _addPart,
+                    icon: const Icon(Icons.add_circle),
+                    color: AppColors.primaryBlue,
+                    iconSize: 32,
                   ),
                 ],
               ),
@@ -789,8 +961,12 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
     _laborCostController.dispose();
     _partsCostController.dispose();
     _notesController.dispose();
+    _customServiceTypeController.dispose();
+    _partNameController.dispose();
+    _partCostController.dispose();
     _customerNameController.dispose();
     _customerPhoneController.dispose();
+    _customerAddressController.dispose();
     _vehicleNumberController.dispose();
     _vehicleMakeController.dispose();
     _vehicleModelController.dispose();

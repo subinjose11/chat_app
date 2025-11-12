@@ -112,6 +112,30 @@ class VehicleRepository {
     }
   }
 
+  // Get single vehicle as stream
+  Stream<Vehicle?> getVehicleStream(String vehicleId) {
+    try {
+      return firestore
+          .collection('vehicles')
+          .doc(vehicleId)
+          .snapshots()
+          .map((doc) {
+        if (doc.exists) {
+          try {
+            return Vehicle.fromJson({...doc.data()!, 'id': doc.id});
+          } catch (e) {
+            log('Error parsing vehicle: $e');
+            return null;
+          }
+        }
+        return null;
+      });
+    } catch (e) {
+      log('Error getting vehicle stream: $e');
+      return Stream.value(null);
+    }
+  }
+
   // Update Vehicle
   Future<void> updateVehicle(BuildContext context, Vehicle vehicle) async {
     try {

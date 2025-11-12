@@ -37,6 +37,12 @@ final vehiclesStreamProvider = StreamProvider<List<Vehicle>>((ref) {
   return vehicleRepository.getVehiclesStream();
 });
 
+// Stream Provider for single vehicle by ID
+final vehicleStreamProvider = StreamProvider.family<Vehicle?, String>((ref, vehicleId) {
+  final vehicleRepository = ref.watch(vehicleRepositoryProvider);
+  return vehicleRepository.getVehicleStream(vehicleId);
+});
+
 // Stream Provider for customer vehicles
 final customerVehiclesStreamProvider = StreamProvider.family<List<Vehicle>, String>((ref, customerId) {
   final vehicleRepository = ref.watch(vehicleRepositoryProvider);
