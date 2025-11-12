@@ -1,14 +1,12 @@
 // ignore_for_file: use_build_context_synchronously
 
-import 'package:auto_route/auto_route.dart';
 import 'package:chat_app/core/styles/app_strings.dart';
 import 'package:chat_app/core/styles/text_styles.dart';
 import 'package:chat_app/core/widget/custom_button.dart';
 import 'package:chat_app/local/shared_prefs_storage_service.dart';
-import 'package:chat_app/routes/app_route.gr.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-@RoutePage()
 class LandingScreen extends StatelessWidget {
   const LandingScreen({super.key});
 
@@ -47,7 +45,7 @@ class LandingScreen extends StatelessWidget {
                   onPressed: () async {
                     await SharedPreferencesHelper.init();
                     await SharedPreferencesHelper.setBool("firstLogin",true);
-                    context.pushRoute(const LogInRoute());
+                    context.go('/login');
                   })),
         ],
       )),

@@ -1,13 +1,11 @@
 // ignore_for_file: use_build_context_synchronously
-import 'package:auto_route/auto_route.dart';
 import 'package:chat_app/core/styles/app_strings.dart';
 import 'package:chat_app/core/styles/text_styles.dart';
 import 'package:chat_app/local/shared_prefs_storage_service.dart';
-import 'package:chat_app/routes/app_route.gr.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 // import 'package:supabase_flutter/supabase_flutter.dart';
 
-@RoutePage()
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
 
@@ -31,12 +29,12 @@ class SplashPageState extends State<SplashPage> {
     if (isFirstLogin) {
       // final session = Supabase.instance.client.auth.currentSession;
       // if (session == null) {
-        context.replaceRoute(const LogInRoute());
+        context.go('/login');
       // } else {
-      //   context.replaceRoute(const HomeRoute());
+      //   context.go('/home');
       // }
     } else {
-         context.replaceRoute(const LandingRoute());
+         context.go('/landing');
     }
   }
 

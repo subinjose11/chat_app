@@ -20,17 +20,11 @@ void main() async {
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends ConsumerStatefulWidget {
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  ConsumerState<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends ConsumerState<MyApp> {
-  @override
   Widget build(BuildContext context) {
-    final appRouter = ref.watch(appRouterProvider);
     return MaterialApp.router(
       title: 'Chat App',
       debugShowCheckedModeBanner: false,
@@ -38,9 +32,7 @@ class _MyAppState extends ConsumerState<MyApp> {
       darkTheme: darkTheme, // Replace with your custom dark theme
       themeMode:
           ThemeMode.system, // Automatically switches based on system theme
-      routerConfig: appRouter.config(),
+      routerConfig: AppRouter.router,
     );
   }
 }
-
-final appRouterProvider = Provider<AppRouter>((ref) => AppRouter());

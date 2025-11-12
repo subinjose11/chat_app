@@ -1,14 +1,12 @@
-import 'package:auto_route/auto_route.dart';
 import 'package:chat_app/core/styles/text_styles.dart';
 import 'package:chat_app/core/utils/utils.dart';
 import 'package:chat_app/core/widget/custom_button.dart';
 import 'package:chat_app/core/widget/custom_text_field.dart';
 import 'package:chat_app/feature/auth/presentation/controller/auth_controller.dart';
-import 'package:chat_app/routes/app_route.gr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-@RoutePage()
 class SignUpPage extends ConsumerStatefulWidget{
   const SignUpPage({super.key});
 
@@ -118,7 +116,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                 ),
                 GestureDetector(
                   onTap: () {
-                    context.router.replace(const LogInRoute());
+                    context.go('/login');
                     _emailController.clear();
                     _passwordController.clear();
                   },

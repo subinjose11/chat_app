@@ -1,5 +1,4 @@
 // ignore_for_file: use_build_context_synchronously
-import 'package:auto_route/auto_route.dart';
 import 'package:chat_app/core/styles/app_colors.dart';
 import 'package:chat_app/core/styles/app_dimens.dart';
 import 'package:chat_app/core/styles/app_strings.dart';
@@ -7,9 +6,9 @@ import 'package:chat_app/core/styles/text_styles.dart';
 import 'package:chat_app/feature/account/presentation/controller/account_controller.dart';
 import 'package:chat_app/feature/account/presentation/widget/account_app_bar.dart';
 import 'package:chat_app/feature/home/presentation/widget/custom_app_bar.dart';
-import 'package:chat_app/routes/app_route.gr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class AccountScreen extends ConsumerStatefulWidget {
   const AccountScreen({super.key});
@@ -77,8 +76,8 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                             ),
                           ),
                           IconButton(
-                            onPressed: () => context.pushRoute(
-                                EditProfileRoute(user: userData.userDetails)),
+                            onPressed: () => context.push('/edit-profile',
+                                extra: userData.userDetails),
                             icon: const Icon(
                               Icons.edit_rounded,
                               color: AppColors.gray400,

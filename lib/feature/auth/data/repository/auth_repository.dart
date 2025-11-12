@@ -2,14 +2,13 @@
 
 import 'dart:developer';
 
-import 'package:auto_route/auto_route.dart';
 import 'package:chat_app/core/utils/utils.dart';
 import 'package:chat_app/feature/auth/data/model/user_model.dart';
-import 'package:chat_app/routes/app_route.gr.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 // import 'package:supabase_flutter/supabase_flutter.dart';
@@ -44,7 +43,7 @@ class AuthRepository {
           const SnackBar(
               content: Text('Registration Successful! Please login.')),
         );
-        context.router.replace(const LogInRoute());
+        context.go('/login');
       }
     } on FirebaseAuthException catch (error) {
       String message = 'Registration failed';
@@ -94,13 +93,13 @@ class AuthRepository {
 
           // Check if user has completed profile setup (has user_name)
           if (userData?['user_name'] == null || userData?['user_name'] == '') {
-            context.router.replaceAll([const UserInfoRoute()]);
+            context.go('/user-info');
           } else {
-            context.router.replaceAll([const HomeRoute()]);
+            context.go('/home');
           }
         } else {
           // User document doesn't exist, redirect to complete profile
-          context.router.replaceAll([const UserInfoRoute()]);
+          context.go('/user-info');
         }
       }
     } on FirebaseAuthException catch (e) {
@@ -179,10 +178,10 @@ class AuthRepository {
 
         if (userData?['user_name'] == null || userData?['user_name'] == '') {
           // Profile incomplete, redirect to user info page
-          context.router.replaceAll([const UserInfoRoute()]);
+          context.go('/user-info');
         } else {
           // Profile complete, redirect to home
-          context.router.replaceAll([const HomeRoute()]);
+          context.go('/home');
         }
       }
     } on FirebaseAuthException catch (e) {
@@ -229,7 +228,7 @@ class AuthRepository {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile updated successfully!')),
       );
-      context.router.replaceAll([const HomeRoute()]);
+      context.go('/home');
     } on FirebaseException catch (e) {
       log('Firestore error: ${e.message}');
       showSnackBar(

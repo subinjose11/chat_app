@@ -1,13 +1,13 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'dart:developer';
-import 'package:auto_route/auto_route.dart';
 import 'package:chat_app/feature/account/data/account_repo/account_repo.dart';
 import 'package:chat_app/feature/account/presentation/state/account_state.dart';
 import 'package:chat_app/feature/account/presentation/ui/account_screen.dart';
 import 'package:chat_app/feature/auth/data/model/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class AccountController extends StateNotifier<AccountState> {
   final AccountRepository accountRepository;
@@ -49,7 +49,7 @@ class AccountController extends StateNotifier<AccountState> {
     final result = await accountRepository.updateProfile(context, userDetails);
     if (result) {
       ref.read(accountControllerProvider.notifier).fetchAccountDetails(context);
-      context.router.maybePop();
+      context.pop();
     }
   }
 }
