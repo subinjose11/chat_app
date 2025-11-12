@@ -366,467 +366,1048 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
     final afterPhotos = ref.watch(afterPhotosProvider);
 
     return Scaffold(
+      backgroundColor: isDark ? AppColors.gray900 : AppColors.gray50,
       appBar: AppBar(
         title: Text(widget.existingOrder != null
             ? 'Edit Service Order'
             : 'Create Service Order'),
+        elevation: 0,
       ),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Vehicle & Customer Information Section (Only for new orders without vehicle context)
               if (widget.existingOrder == null && widget.vehicle == null) ...[
-                Text(
+                _buildSectionHeader(
                   'Vehicle & Customer Information',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? AppColors.white : AppColors.textPrimary,
-                  ),
+                  Icons.person_pin_circle,
+                  isDark,
                 ),
                 const SizedBox(height: 16),
 
-                // Customer Name
-                TextFormField(
-                  controller: _customerNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Customer Name',
-                    prefixIcon: Icon(Icons.person),
-                    hintText: 'Enter customer name',
+                // Customer Information Card
+                Container(
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.gray800 : AppColors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark ? AppColors.gray700 : AppColors.gray300,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (isDark ? Colors.black : Colors.grey)
+                            .withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter customer name';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryBlue.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.person,
+                              color: AppColors.primaryBlue,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Customer Details',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: isDark
+                                  ? AppColors.white
+                                  : AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
 
-                // Customer Phone
-                TextFormField(
-                  controller: _customerPhoneController,
-                  decoration: const InputDecoration(
-                    labelText: 'Customer Phone',
-                    prefixIcon: Icon(Icons.phone),
-                    hintText: 'Enter phone number',
-                  ),
-                  keyboardType: TextInputType.phone,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter phone number';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
+                      // Customer Name
+                      TextFormField(
+                        controller: _customerNameController,
+                        decoration: InputDecoration(
+                          labelText: 'Customer Name',
+                          prefixIcon: const Icon(Icons.person_outline),
+                          hintText: 'Enter customer name',
+                          filled: true,
+                          fillColor: isDark
+                              ? AppColors.gray700.withOpacity(0.5)
+                              : AppColors.gray50,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter customer name';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
 
-                // Customer Address
-                TextFormField(
-                  controller: _customerAddressController,
-                  decoration: const InputDecoration(
-                    labelText: 'Customer Address',
-                    prefixIcon: Icon(Icons.location_on),
-                    hintText: 'Enter address',
-                  ),
-                  maxLines: 2,
-                  keyboardType: TextInputType.streetAddress,
-                ),
-                const SizedBox(height: 16),
+                      // Customer Phone
+                      TextFormField(
+                        controller: _customerPhoneController,
+                        decoration: InputDecoration(
+                          labelText: 'Customer Phone',
+                          prefixIcon: const Icon(Icons.phone_outlined),
+                          hintText: 'Enter phone number',
+                          filled: true,
+                          fillColor: isDark
+                              ? AppColors.gray700.withOpacity(0.5)
+                              : AppColors.gray50,
+                        ),
+                        keyboardType: TextInputType.phone,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter phone number';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
 
-                // Vehicle Number
-                TextFormField(
-                  controller: _vehicleNumberController,
-                  decoration: const InputDecoration(
-                    labelText: 'Vehicle Number',
-                    prefixIcon: Icon(Icons.confirmation_number),
-                    hintText: 'e.g., ABC 1234',
+                      // Customer Address
+                      TextFormField(
+                        controller: _customerAddressController,
+                        decoration: InputDecoration(
+                          labelText: 'Customer Address (Optional)',
+                          prefixIcon: const Icon(Icons.location_on_outlined),
+                          hintText: 'Enter address',
+                          filled: true,
+                          fillColor: isDark
+                              ? AppColors.gray700.withOpacity(0.5)
+                              : AppColors.gray50,
+                        ),
+                        maxLines: 2,
+                        keyboardType: TextInputType.streetAddress,
+                      ),
+                    ],
                   ),
-                  textCapitalization: TextCapitalization.characters,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter vehicle number';
-                    }
-                    return null;
-                  },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
-                // Vehicle Make
-                TextFormField(
-                  controller: _vehicleMakeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Make/Brand',
-                    prefixIcon: Icon(Icons.directions_car),
-                    hintText: 'e.g., Honda, Toyota',
+                // Vehicle Information Card
+                Container(
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.gray800 : AppColors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark ? AppColors.gray700 : AppColors.gray300,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (isDark ? Colors.black : Colors.grey)
+                            .withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter vehicle make';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.directions_car,
+                              color: AppColors.success,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Vehicle Details',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: isDark
+                                  ? AppColors.white
+                                  : AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
 
-                // Vehicle Model
-                TextFormField(
-                  controller: _vehicleModelController,
-                  decoration: const InputDecoration(
-                    labelText: 'Model',
-                    prefixIcon: Icon(Icons.car_repair),
-                    hintText: 'e.g., Civic, Camry',
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter vehicle model';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
+                      // Vehicle Number
+                      TextFormField(
+                        controller: _vehicleNumberController,
+                        decoration: InputDecoration(
+                          labelText: 'Vehicle Number',
+                          prefixIcon: const Icon(Icons.pin_outlined),
+                          hintText: 'e.g., ABC 1234',
+                          filled: true,
+                          fillColor: isDark
+                              ? AppColors.gray700.withOpacity(0.5)
+                              : AppColors.gray50,
+                        ),
+                        textCapitalization: TextCapitalization.characters,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter vehicle number';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
 
-                // Vehicle Year
-                TextFormField(
-                  controller: _vehicleYearController,
-                  decoration: const InputDecoration(
-                    labelText: 'Year',
-                    prefixIcon: Icon(Icons.calendar_today),
-                    hintText: 'e.g., 2020',
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter year';
-                    }
-                    final year = int.tryParse(value);
-                    if (year == null ||
-                        year < 1900 ||
-                        year > DateTime.now().year + 1) {
-                      return 'Please enter a valid year';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
+                      // Make and Model Row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _vehicleMakeController,
+                              decoration: InputDecoration(
+                                labelText: 'Make/Brand',
+                                hintText: 'e.g., Honda',
+                                filled: true,
+                                fillColor: isDark
+                                    ? AppColors.gray700.withOpacity(0.5)
+                                    : AppColors.gray50,
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Required';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _vehicleModelController,
+                              decoration: InputDecoration(
+                                labelText: 'Model',
+                                hintText: 'e.g., Civic',
+                                filled: true,
+                                fillColor: isDark
+                                    ? AppColors.gray700.withOpacity(0.5)
+                                    : AppColors.gray50,
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Required';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
 
-                // Fuel Type Dropdown
-                DropdownButtonFormField<String>(
-                  value: _selectedFuelType,
-                  decoration: const InputDecoration(
-                    labelText: 'Fuel Type',
-                    prefixIcon: Icon(Icons.local_gas_station),
+                      // Year and Fuel Type Row
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _vehicleYearController,
+                              decoration: InputDecoration(
+                                labelText: 'Year',
+                                hintText: 'e.g., 2020',
+                                prefixIcon:
+                                    const Icon(Icons.calendar_today_outlined),
+                                filled: true,
+                                fillColor: isDark
+                                    ? AppColors.gray700.withOpacity(0.5)
+                                    : AppColors.gray50,
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Required';
+                                }
+                                final year = int.tryParse(value);
+                                if (year == null ||
+                                    year < 1900 ||
+                                    year > DateTime.now().year + 1) {
+                                  return 'Invalid year';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              value: _selectedFuelType,
+                              decoration: InputDecoration(
+                                labelText: 'Fuel Type',
+                                prefixIcon: const Icon(Icons.local_gas_station),
+                                filled: true,
+                                fillColor: isDark
+                                    ? AppColors.gray700.withOpacity(0.5)
+                                    : AppColors.gray50,
+                              ),
+                              items: _fuelTypes.map((type) {
+                                return DropdownMenuItem(
+                                  value: type,
+                                  child: Text(type),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedFuelType = value!;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  items: _fuelTypes.map((type) {
-                    return DropdownMenuItem(
-                      value: type,
-                      child: Text(type),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedFuelType = value!;
-                    });
-                  },
                 ),
                 const SizedBox(height: 24),
               ],
 
-              // Service Information Section
-              Text(
-                'Service Information',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.white : AppColors.textPrimary,
-                ),
+              // Work Status Section
+              _buildSectionHeader(
+                'Work Status',
+                Icons.query_stats,
+                isDark,
               ),
               const SizedBox(height: 16),
 
-              // Service Type Dropdown
-              DropdownButtonFormField<String>(
-                value: _selectedServiceType,
-                decoration: const InputDecoration(
-                  labelText: 'Service Type',
-                  prefixIcon: Icon(Icons.build),
-                  hintText: 'Select service type',
-                ),
-                items: _serviceTypes.map((type) {
-                  return DropdownMenuItem(
-                    value: type,
-                    child: Text(type),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedServiceType = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null) {
-                    return 'Please select a service type';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Custom Service Type Input (shown when "Other" is selected)
-              if (_selectedServiceType == 'Other') ...[
-                TextFormField(
-                  controller: _customServiceTypeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Custom Service Type',
-                    hintText: 'Enter custom service type',
-                    prefixIcon: Icon(Icons.edit),
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.gray800 : AppColors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? AppColors.gray700 : AppColors.gray300,
                   ),
-                  validator: (value) {
-                    if (_selectedServiceType == 'Other' &&
-                        (value == null || value.isEmpty)) {
-                      return 'Please enter custom service type';
-                    }
-                    return null;
+                  boxShadow: [
+                    BoxShadow(
+                      color: (isDark ? Colors.black : Colors.grey)
+                          .withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(20),
+                child: DropdownButtonFormField<String>(
+                  value: _selectedWorkStatus,
+                  decoration: InputDecoration(
+                    labelText: 'Current Status',
+                    prefixIcon: const Icon(Icons.query_stats_outlined),
+                    filled: true,
+                    fillColor: isDark
+                        ? AppColors.gray700.withOpacity(0.5)
+                        : AppColors.gray50,
+                  ),
+                  items: _workStatuses.map((status) {
+                    return DropdownMenuItem(
+                      value: status,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: _getStatusColor(status),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(_formatStatus(status)),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedWorkStatus = value!;
+                    });
                   },
                 ),
-                const SizedBox(height: 16),
-              ],
+              ),
+              const SizedBox(height: 24),
 
-              // Description
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  hintText: 'Describe the service work...',
-                  prefixIcon: Icon(Icons.description),
-                ),
-                maxLines: 3,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter description';
-                  }
-                  return null;
-                },
+              // Service Information Section
+              _buildSectionHeader(
+                'Service Information',
+                Icons.build_circle,
+                isDark,
               ),
               const SizedBox(height: 16),
 
-              // Work Status Dropdown
-              DropdownButtonFormField<String>(
-                value: _selectedWorkStatus,
-                decoration: const InputDecoration(
-                  labelText: 'Work Status',
-                  prefixIcon: Icon(Icons.query_stats),
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.gray800 : AppColors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? AppColors.gray700 : AppColors.gray300,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (isDark ? Colors.black : Colors.grey)
+                          .withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                items: _workStatuses.map((status) {
-                  return DropdownMenuItem(
-                    value: status,
-                    child: Text(_formatStatus(status)),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedWorkStatus = value!;
-                  });
-                },
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Service Type Dropdown
+                    DropdownButtonFormField<String>(
+                      value: _selectedServiceType,
+                      decoration: InputDecoration(
+                        labelText: 'Service Type',
+                        prefixIcon: const Icon(Icons.build_outlined),
+                        hintText: 'Select service type',
+                        filled: true,
+                        fillColor: isDark
+                            ? AppColors.gray700.withOpacity(0.5)
+                            : AppColors.gray50,
+                      ),
+                      items: _serviceTypes.map((type) {
+                        return DropdownMenuItem(
+                          value: type,
+                          child: Text(type),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedServiceType = value;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null) {
+                          return 'Please select a service type';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Custom Service Type Input (shown when "Other" is selected)
+                    if (_selectedServiceType == 'Other') ...[
+                      TextFormField(
+                        controller: _customServiceTypeController,
+                        decoration: InputDecoration(
+                          labelText: 'Custom Service Type',
+                          hintText: 'Enter custom service type',
+                          prefixIcon: const Icon(Icons.edit_outlined),
+                          filled: true,
+                          fillColor: isDark
+                              ? AppColors.gray700.withOpacity(0.5)
+                              : AppColors.gray50,
+                        ),
+                        validator: (value) {
+                          if (_selectedServiceType == 'Other' &&
+                              (value == null || value.isEmpty)) {
+                            return 'Please enter custom service type';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
+                    // Description
+                    TextFormField(
+                      controller: _descriptionController,
+                      decoration: InputDecoration(
+                        labelText: 'Description',
+                        hintText: 'Describe the service work...',
+                        prefixIcon: const Icon(Icons.description_outlined),
+                        filled: true,
+                        fillColor: isDark
+                            ? AppColors.gray700.withOpacity(0.5)
+                            : AppColors.gray50,
+                      ),
+                      maxLines: 4,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter description';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 24),
 
               // Cost Section
-              Text(
+              _buildSectionHeader(
                 'Cost Breakdown',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.white : AppColors.textPrimary,
-                ),
+                Icons.receipt_long,
+                isDark,
               ),
               const SizedBox(height: 16),
 
-              // Labor Cost
-              TextFormField(
-                controller: _laborCostController,
-                decoration: const InputDecoration(
-                  labelText: 'Labor Cost',
-                  hintText: '0.00',
-                  prefixIcon: Icon(Icons.engineering),
+              // Cost Breakdown Card
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.gray800 : AppColors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? AppColors.gray700 : AppColors.gray300,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (isDark ? Colors.black : Colors.grey)
+                          .withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
-                ],
-                onChanged: (value) {
-                  setState(() {}); // Update total
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Required';
-                  }
-                  if (double.tryParse(value) == null) {
-                    return 'Invalid';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Parts Breakdown Section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Parts Breakdown',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.white : AppColors.textPrimary,
-                    ),
-                  ),
-                  if (_parts.isNotEmpty)
-                    Text(
-                      'Total: ₹${_totalPartsCost.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryBlue,
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Parts List
-              if (_parts.isNotEmpty)
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: isDark ? AppColors.gray700 : AppColors.gray300,
-                    ),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _parts.length,
-                    separatorBuilder: (context, index) => Divider(
-                      height: 1,
-                      color: isDark ? AppColors.gray700 : AppColors.gray300,
-                    ),
-                    itemBuilder: (context, index) {
-                      final part = _parts[index];
-                      return ListTile(
-                        dense: true,
-                        leading: const Icon(Icons.build_circle, size: 20),
-                        title: Text(
-                          part.name,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isDark
-                                ? AppColors.white
-                                : AppColors.textPrimary,
-                          ),
+                child: Column(
+                  children: [
+                    // Labor Cost Section
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.gray700.withOpacity(0.3)
+                            : AppColors.gray50,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(16),
+                          topRight: Radius.circular(16),
                         ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '₹${part.cost.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontSize: 14,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryBlue.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.engineering,
+                                  color: AppColors.primaryBlue,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Labor Cost',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? AppColors.white
+                                      : AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _laborCostController,
+                            decoration: InputDecoration(
+                              hintText: 'Enter labor cost',
+                              prefixText: '₹ ',
+                              prefixStyle: TextStyle(
+                                fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: isDark
                                     ? AppColors.white
                                     : AppColors.textPrimary,
                               ),
+                              filled: true,
+                              fillColor:
+                                  isDark ? AppColors.gray800 : AppColors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: isDark
+                                      ? AppColors.gray600
+                                      : AppColors.gray300,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: isDark
+                                      ? AppColors.gray600
+                                      : AppColors.gray300,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: AppColors.primaryBlue,
+                                  width: 2,
+                                ),
+                              ),
                             ),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              icon: const Icon(Icons.delete, size: 20),
-                              color: AppColors.error,
-                              onPressed: () => _removePart(index),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: isDark
+                                  ? AppColors.white
+                                  : AppColors.textPrimary,
                             ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r'^\d*\.?\d{0,2}')),
+                            ],
+                            onChanged: (value) {
+                              setState(() {}); // Update total
+                            },
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Labor cost is required';
+                              }
+                              if (double.tryParse(value) == null) {
+                                return 'Enter a valid amount';
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Divider
+                    Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: isDark ? AppColors.gray700 : AppColors.gray300,
+                    ),
+
+                    // Parts Section
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.success.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.build_circle,
+                                  color: AppColors.success,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Parts & Materials',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? AppColors.white
+                                      : AppColors.textPrimary,
+                                ),
+                              ),
+                              const Spacer(),
+                              if (_parts.isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.success.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    '₹${_totalPartsCost.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.success,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Parts List
+                          if (_parts.isNotEmpty) ...[
+                            Container(
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? AppColors.gray900.withOpacity(0.5)
+                                    : AppColors.gray50,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: _parts.length,
+                                padding: EdgeInsets.zero,
+                                separatorBuilder: (context, index) => Divider(
+                                  height: 1,
+                                  indent: 16,
+                                  endIndent: 16,
+                                  color: isDark
+                                      ? AppColors.gray700
+                                      : AppColors.gray300,
+                                ),
+                                itemBuilder: (context, index) {
+                                  final part = _parts[index];
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primaryBlue
+                                                .withOpacity(0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(6),
+                                          ),
+                                          child: const Icon(
+                                            Icons.inventory_2,
+                                            size: 16,
+                                            color: AppColors.primaryBlue,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            part.name,
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w500,
+                                              color: isDark
+                                                  ? AppColors.white
+                                                  : AppColors.textPrimary,
+                                            ),
+                                          ),
+                                        ),
+                                        Text(
+                                          '₹${part.cost.toStringAsFixed(2)}',
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                            color: isDark
+                                                ? AppColors.white
+                                                : AppColors.textPrimary,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            onTap: () => _removePart(index),
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                            child: Container(
+                                              padding: const EdgeInsets.all(6),
+                                              child: const Icon(
+                                                Icons.close,
+                                                size: 18,
+                                                color: AppColors.error,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 12),
                           ],
+
+                          // Add Part Form
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? AppColors.gray700.withOpacity(0.3)
+                                  : AppColors.primaryBlue.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isDark
+                                    ? AppColors.gray600
+                                    : AppColors.primaryBlue.withOpacity(0.2),
+                                width: 2,
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 2,
+                                      child: TextFormField(
+                                        controller: _partNameController,
+                                        decoration: InputDecoration(
+                                          labelText: 'Part Name',
+                                          hintText: 'e.g., Oil Filter',
+                                          prefixIcon: const Icon(
+                                            Icons.label_outline,
+                                            size: 20,
+                                          ),
+                                          isDense: true,
+                                          filled: true,
+                                          fillColor: isDark
+                                              ? AppColors.gray800
+                                              : AppColors.white,
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 12,
+                                          ),
+                                          border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _partCostController,
+                                        decoration: InputDecoration(
+                                          labelText: 'Cost',
+                                          hintText: '0.00',
+                                          prefixText: '₹ ',
+                                          isDense: true,
+                                          filled: true,
+                                          fillColor: isDark
+                                              ? AppColors.gray800
+                                              : AppColors.white,
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 12,
+                                          ),
+                                          border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                        keyboardType: const TextInputType
+                                            .numberWithOptions(decimal: true),
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter.allow(
+                                              RegExp(r'^\d*\.?\d{0,2}')),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    onPressed: _addPart,
+                                    icon: const Icon(Icons.add, size: 20),
+                                    label: const Text('Add Part'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primaryBlue,
+                                      foregroundColor: AppColors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Divider
+                    Divider(
+                      height: 1,
+                      thickness: 2,
+                      color: isDark ? AppColors.gray700 : AppColors.gray300,
+                    ),
+
+                    // Total Cost Summary
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryBlue.withOpacity(0.05),
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(16),
+                          bottomRight: Radius.circular(16),
                         ),
-                      );
-                    },
-                  ),
-                ),
-              const SizedBox(height: 12),
-
-              // Add Part Form
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextFormField(
-                      controller: _partNameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Part Name',
-                        hintText: 'e.g., Oil Filter',
-                        isDense: true,
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _partCostController,
-                      decoration: const InputDecoration(
-                        labelText: 'Cost',
-                        hintText: '0.00',
-                        prefixText: '₹ ',
-                        isDense: true,
-                      ),
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                            RegExp(r'^\d*\.?\d{0,2}')),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: _addPart,
-                    icon: const Icon(Icons.add_circle),
-                    color: AppColors.primaryBlue,
-                    iconSize: 32,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Total Cost Display
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryBlue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.primaryBlue.withOpacity(0.3),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Total Cost',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      '₹${_totalCost.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryBlue,
+                      child: Column(
+                        children: [
+                          // Labor Cost Row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.engineering,
+                                    size: 16,
+                                    color: isDark
+                                        ? AppColors.gray400
+                                        : AppColors.gray600,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Labor',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: isDark
+                                          ? AppColors.gray300
+                                          : AppColors.gray700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                '₹${(double.tryParse(_laborCostController.text) ?? 0).toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? AppColors.gray300
+                                      : AppColors.gray700,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          // Parts Cost Row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.build_circle,
+                                    size: 16,
+                                    color: isDark
+                                        ? AppColors.gray400
+                                        : AppColors.gray600,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Parts (${_parts.length})',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: isDark
+                                          ? AppColors.gray300
+                                          : AppColors.gray700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                '₹${_totalPartsCost.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? AppColors.gray300
+                                      : AppColors.gray700,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Divider(
+                            thickness: 1,
+                            color:
+                                isDark ? AppColors.gray700 : AppColors.gray300,
+                          ),
+                          const SizedBox(height: 12),
+                          // Total Row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(
+                                    Icons.receipt_long,
+                                    size: 20,
+                                    color: AppColors.primaryBlue,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Total Cost',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryBlue,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primaryBlue
+                                          .withOpacity(0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  '₹${_totalCost.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -834,50 +1415,191 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Before Photos
-              Text(
-                'Before Photos',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.white : AppColors.textPrimary,
-                ),
+              // Photos Section
+              _buildSectionHeader(
+                'Service Photos',
+                Icons.photo_camera,
+                isDark,
               ),
-              const SizedBox(height: 12),
-              _buildPhotoSection(beforePhotos, true, isDark),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
-              // After Photos
-              Text(
-                'After Photos',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.white : AppColors.textPrimary,
+              // Photos Container
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.gray800 : AppColors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? AppColors.gray700 : AppColors.gray300,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (isDark ? Colors.black : Colors.grey)
+                          .withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Before Photos
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: AppColors.error.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Icon(
+                            Icons.photo_library,
+                            color: AppColors.error,
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Before Photos',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? AppColors.white
+                                : AppColors.textPrimary,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (beforePhotos.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.error.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '${beforePhotos.length}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.error,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _buildPhotoSection(beforePhotos, true, isDark),
+                    const SizedBox(height: 24),
+
+                    // Divider
+                    Divider(
+                      color: isDark ? AppColors.gray700 : AppColors.gray300,
+                    ),
+                    const SizedBox(height: 24),
+
+                    // After Photos
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: AppColors.success.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Icon(
+                            Icons.photo_library,
+                            color: AppColors.success,
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'After Photos',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? AppColors.white
+                                : AppColors.textPrimary,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (afterPhotos.isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              '${afterPhotos.length}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.success,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _buildPhotoSection(afterPhotos, false, isDark),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              _buildPhotoSection(afterPhotos, false, isDark),
               const SizedBox(height: 32),
 
               // Action Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: _submitOrder,
-                      icon: const Icon(Icons.check),
-                      label: Text(widget.existingOrder != null
-                          ? 'Update Order'
-                          : 'Submit Order'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primaryBlue,
+                      AppColors.primaryBlue.withOpacity(0.8),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryBlue.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton.icon(
+                  onPressed: _submitOrder,
+                  icon: const Icon(Icons.check_circle_outline, size: 24),
+                  label: Text(
+                    widget.existingOrder != null
+                        ? 'Update Service Order'
+                        : 'Submit Service Order',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ],
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: AppColors.white,
+                    shadowColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    minimumSize: const Size(double.infinity, 56),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -977,6 +1699,51 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
         .split('_')
         .map((word) => word[0].toUpperCase() + word.substring(1))
         .join(' ');
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'pending':
+        return AppColors.warning;
+      case 'in_progress':
+        return AppColors.primaryBlue;
+      case 'completed':
+        return AppColors.success;
+      case 'delivered':
+        return AppColors.success;
+      case 'cancelled':
+        return AppColors.error;
+      default:
+        return AppColors.gray500;
+    }
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon, bool isDark) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppColors.primaryBlue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            icon,
+            color: AppColors.primaryBlue,
+            size: 22,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: isDark ? AppColors.white : AppColors.textPrimary,
+          ),
+        ),
+      ],
+    );
   }
 
   @override

@@ -17,7 +17,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _pushNotifications = true;
   bool _serviceReminders = true;
   bool _autoBackup = false;
-  String _themeMode = 'system'; // light, dark, system
 
   @override
   Widget build(BuildContext context) {
@@ -84,17 +83,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 24),
-
-          // Appearance Section
-          _buildSectionTitle(isDark, 'Appearance'),
-          const SizedBox(height: 12),
-          _buildSettingsCard(
-            isDark,
-            [
-              _buildThemeSelector(isDark),
-            ],
           ),
           const SizedBox(height: 24),
 
@@ -338,98 +326,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
       child: Column(children: children),
-    );
-  }
-
-  Widget _buildThemeSelector(bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.palette, color: AppColors.gray500, size: 24),
-              const SizedBox(width: 12),
-              Text(
-                'Theme',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.white : AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildThemeOption(
-                    'Light', 'light', Icons.light_mode, isDark),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child:
-                    _buildThemeOption('Dark', 'dark', Icons.dark_mode, isDark),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildThemeOption(
-                    'System', 'system', Icons.settings_brightness, isDark),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildThemeOption(
-      String label, String value, IconData icon, bool isDark) {
-    final isSelected = _themeMode == value;
-
-    return GestureDetector(
-      onTap: () {
-        setState(() => _themeMode = value);
-        // TODO: Apply theme change
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$label theme will be applied')),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.primaryBlue.withOpacity(0.1)
-              : (isDark ? AppColors.gray800 : AppColors.gray100),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.primaryBlue
-                : (isDark ? AppColors.gray700 : AppColors.gray300),
-            width: isSelected ? 2 : 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? AppColors.primaryBlue : AppColors.gray500,
-              size: 28,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? AppColors.primaryBlue : AppColors.gray600,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
