@@ -130,8 +130,10 @@ class _VehicleRegistrationScreenState extends ConsumerState<VehicleRegistrationS
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: isDark ? AppColors.gray900 : AppColors.gray50,
       appBar: AppBar(
         title: const Text('Vehicle Registration'),
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -140,207 +142,415 @@ class _VehicleRegistrationScreenState extends ConsumerState<VehicleRegistrationS
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Customer Information Section
-              Text(
+              _buildSectionHeader(
                 'Customer Information',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.white : AppColors.textPrimary,
-                ),
+                Icons.person_pin_circle,
+                isDark,
               ),
               const SizedBox(height: 16),
               
-              TextFormField(
-                controller: _customerNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Customer Name',
-                  hintText: 'Enter customer full name',
-                  prefixIcon: Icon(Icons.person),
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.gray800 : AppColors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? AppColors.gray700 : AppColors.gray300,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (isDark ? Colors.black : Colors.grey)
+                          .withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter customer name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryBlue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.person,
+                            color: AppColors.primaryBlue,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Customer Details',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? AppColors.white
+                                : AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
 
-              TextFormField(
-                controller: _phoneNumberController,
-                decoration: const InputDecoration(
-                  labelText: 'Phone Number',
-                  hintText: 'Enter phone number',
-                  prefixIcon: Icon(Icons.phone),
-                ),
-                keyboardType: TextInputType.phone,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter phone number';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _customerNameController,
+                      decoration: InputDecoration(
+                        labelText: 'Customer Name',
+                        hintText: 'Enter customer full name',
+                        prefixIcon: const Icon(Icons.person_outline),
+                        filled: true,
+                        fillColor: isDark
+                            ? AppColors.gray700.withOpacity(0.5)
+                            : AppColors.gray50,
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter customer name';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
 
-              TextFormField(
-                controller: _customerEmailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email (Optional)',
-                  hintText: 'Enter email address',
-                  prefixIcon: Icon(Icons.email),
-                ),
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _phoneNumberController,
+                      decoration: InputDecoration(
+                        labelText: 'Phone Number',
+                        hintText: 'Enter phone number',
+                        prefixIcon: const Icon(Icons.phone_outlined),
+                        filled: true,
+                        fillColor: isDark
+                            ? AppColors.gray700.withOpacity(0.5)
+                            : AppColors.gray50,
+                      ),
+                      keyboardType: TextInputType.phone,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter phone number';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
 
-              TextFormField(
-                controller: _customerAddressController,
-                decoration: const InputDecoration(
-                  labelText: 'Address (Optional)',
-                  hintText: 'Enter customer address',
-                  prefixIcon: Icon(Icons.location_on),
+                    TextFormField(
+                      controller: _customerEmailController,
+                      decoration: InputDecoration(
+                        labelText: 'Email (Optional)',
+                        hintText: 'Enter email address',
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        filled: true,
+                        fillColor: isDark
+                            ? AppColors.gray700.withOpacity(0.5)
+                            : AppColors.gray50,
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 16),
+
+                    TextFormField(
+                      controller: _customerAddressController,
+                      decoration: InputDecoration(
+                        labelText: 'Address (Optional)',
+                        hintText: 'Enter customer address',
+                        prefixIcon: const Icon(Icons.location_on_outlined),
+                        filled: true,
+                        fillColor: isDark
+                            ? AppColors.gray700.withOpacity(0.5)
+                            : AppColors.gray50,
+                      ),
+                      maxLines: 2,
+                    ),
+                  ],
                 ),
-                maxLines: 2,
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
 
               // Vehicle Information Section
-              Text(
+              _buildSectionHeader(
                 'Vehicle Information',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? AppColors.white : AppColors.textPrimary,
-                ),
+                Icons.directions_car,
+                isDark,
               ),
               const SizedBox(height: 16),
 
-              TextFormField(
-                controller: _vehicleNumberController,
-                decoration: const InputDecoration(
-                  labelText: 'Vehicle Number',
-                  hintText: 'e.g., ABC 1234',
-                  prefixIcon: Icon(Icons.confirmation_number),
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.gray800 : AppColors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? AppColors.gray700 : AppColors.gray300,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (isDark ? Colors.black : Colors.grey)
+                          .withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                textCapitalization: TextCapitalization.characters,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter vehicle number';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.success.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.directions_car,
+                            color: AppColors.success,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Vehicle Details',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? AppColors.white
+                                : AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
 
-              TextFormField(
-                controller: _brandController,
-                decoration: const InputDecoration(
-                  labelText: 'Brand',
-                  hintText: 'e.g., Honda, Toyota',
-                  prefixIcon: Icon(Icons.directions_car),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter brand';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _vehicleNumberController,
+                      decoration: InputDecoration(
+                        labelText: 'Vehicle Number',
+                        hintText: 'e.g., ABC 1234',
+                        prefixIcon: const Icon(Icons.pin_outlined),
+                        filled: true,
+                        fillColor: isDark
+                            ? AppColors.gray700.withOpacity(0.5)
+                            : AppColors.gray50,
+                      ),
+                      textCapitalization: TextCapitalization.characters,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter vehicle number';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
 
-              TextFormField(
-                controller: _modelController,
-                decoration: const InputDecoration(
-                  labelText: 'Model',
-                  hintText: 'e.g., Civic, Camry',
-                  prefixIcon: Icon(Icons.car_repair),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter model';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _brandController,
+                            decoration: InputDecoration(
+                              labelText: 'Brand',
+                              hintText: 'e.g., Honda',
+                              filled: true,
+                              fillColor: isDark
+                                  ? AppColors.gray700.withOpacity(0.5)
+                                  : AppColors.gray50,
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Required';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _modelController,
+                            decoration: InputDecoration(
+                              labelText: 'Model',
+                              hintText: 'e.g., Civic',
+                              filled: true,
+                              fillColor: isDark
+                                  ? AppColors.gray700.withOpacity(0.5)
+                                  : AppColors.gray50,
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Required';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
 
-              TextFormField(
-                controller: _yearController,
-                decoration: const InputDecoration(
-                  labelText: 'Year',
-                  hintText: 'e.g., 2020',
-                  prefixIcon: Icon(Icons.calendar_today),
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter year';
-                  }
-                  final year = int.tryParse(value);
-                  if (year == null || year < 1900 || year > DateTime.now().year + 1) {
-                    return 'Please enter a valid year';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _yearController,
+                            decoration: InputDecoration(
+                              labelText: 'Year',
+                              hintText: 'e.g., 2020',
+                              prefixIcon:
+                                  const Icon(Icons.calendar_today_outlined),
+                              filled: true,
+                              fillColor: isDark
+                                  ? AppColors.gray700.withOpacity(0.5)
+                                  : AppColors.gray50,
+                            ),
+                            keyboardType: TextInputType.number,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Required';
+                              }
+                              final year = int.tryParse(value);
+                              if (year == null ||
+                                  year < 1900 ||
+                                  year > DateTime.now().year + 1) {
+                                return 'Invalid year';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: _selectedFuelType,
+                            decoration: InputDecoration(
+                              labelText: 'Fuel Type',
+                              prefixIcon: const Icon(Icons.local_gas_station),
+                              filled: true,
+                              fillColor: isDark
+                                  ? AppColors.gray700.withOpacity(0.5)
+                                  : AppColors.gray50,
+                            ),
+                            items: _fuelTypes.map((fuelType) {
+                              return DropdownMenuItem(
+                                value: fuelType,
+                                child: Text(fuelType),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedFuelType = value!;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
 
-              // Fuel Type Dropdown
-              DropdownButtonFormField<String>(
-                value: _selectedFuelType,
-                decoration: const InputDecoration(
-                  labelText: 'Fuel Type',
-                  prefixIcon: Icon(Icons.local_gas_station),
+                    TextFormField(
+                      controller: _notesController,
+                      decoration: InputDecoration(
+                        labelText: 'Notes (Optional)',
+                        hintText: 'Any additional information',
+                        prefixIcon: const Icon(Icons.note_outlined),
+                        alignLabelWithHint: true,
+                        filled: true,
+                        fillColor: isDark
+                            ? AppColors.gray700.withOpacity(0.5)
+                            : AppColors.gray50,
+                      ),
+                      maxLines: 3,
+                    ),
+                  ],
                 ),
-                items: _fuelTypes.map((fuelType) {
-                  return DropdownMenuItem(
-                    value: fuelType,
-                    child: Text(fuelType),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedFuelType = value!;
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _notesController,
-                decoration: const InputDecoration(
-                  labelText: 'Notes (Optional)',
-                  hintText: 'Any additional information',
-                  prefixIcon: Icon(Icons.note),
-                  alignLabelWithHint: true,
-                ),
-                maxLines: 3,
               ),
               const SizedBox(height: 32),
 
               // Save Button
-              SizedBox(
-                width: double.infinity,
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primaryBlue,
+                      AppColors.primaryBlue.withOpacity(0.8),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryBlue.withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
                 child: ElevatedButton.icon(
                   onPressed: _saveVehicle,
-                  icon: const Icon(Icons.save),
-                  label: const Text('Save Vehicle'),
+                  icon: const Icon(Icons.check_circle_outline, size: 24),
+                  label: const Text(
+                    'Register Vehicle',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: AppColors.white,
+                    shadowColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    minimumSize: const Size(double.infinity, 56),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon, bool isDark) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppColors.primaryBlue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            icon,
+            color: AppColors.primaryBlue,
+            size: 22,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: isDark ? AppColors.white : AppColors.textPrimary,
+          ),
+        ),
+      ],
     );
   }
 }
