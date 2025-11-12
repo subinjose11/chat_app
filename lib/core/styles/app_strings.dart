@@ -27,7 +27,3 @@ class LocalStorageKeys {
   static const String cognitoUserId = "CognitoUserPoolUserName";
 }
 
-class GifFiles {
-  static const String backGroundGif =
-      "https://lifewink-common.s3.us-east-2.amazonaws.com/animations/animation_bg.gif";
-}

@@ -2,31 +2,46 @@ import 'dart:math';
 import 'dart:ui';
 
 class AppColors {
-  static const primaryColor = Color(0xff0169EB);
-  static const primary900 = Color(0xff0169EB);
-  static const primary700 = Color(0xff3487EF);
-  static const secondaryColor = Color(0xff529BF6);
-  static const dotGrayColor = Color(0xffD2D6DB);
-  static const primary000 = Color(0xffE6F0FD);
-  static const primary100 = Color(0xffCCE1FB);
-  static const primary200 = Color(0xffB3D2F9);
-  static const almostWhite = Color(0xFFF9F5FF);
-  static const gray50 = Color(0x40F9FAFB);
-  static const pinkPale = Color(0xffFDE7F3);
-  static const dragHandleColor = Color(0xffD2D6DB);
-  static const pinkHot = Color(0xffE7128B);
-  static const scaffoldBackground = Color(0xff529BF6);
-  static const gray400 = Color(0xff9DA4AE);
+  // AutoTrack Pro Primary Colors
+  static const primaryBlue = Color(0xff1E88E5); // Main blue #1E88E5
+  static const primaryColor = Color(0xff1E88E5);
+  static const primaryDark = Color(0xff1565C0);
+  static const primaryLight = Color(0xff42A5F5);
+  
+  // Status Colors
+  static const success = Color(0xff4CAF50);
+  static const warning = Color(0xffFF9800);
+  static const error = Color(0xffF44336);
+  static const info = Color(0xff2196F3);
+  
+  // Gray Scale
+  static const white = Color(0xFFFFFFFF);
+  static const gray50 = Color(0xFFFAFAFA);
+  static const gray100 = Color(0xFFF5F5F5);
+  static const gray200 = Color(0xFFEEEEEE);
+  static const gray300 = Color(0xFFE0E0E0);
+  static const gray400 = Color(0xFFBDBDBD);
+  static const gray500 = Color(0xFF9E9E9E);
+  static const gray600 = Color(0xFF757575);
+  static const gray700 = Color(0xFF616161);
+  static const gray800 = Color(0xFF424242);
+  static const gray900 = Color(0xFF212121);
   static const pureBlack = Color(0xff000000);
-  static const addRecipientGray = Color(0xff475467);
-  static const navyB1 = Color(0xff09223F);
-  static const navyB2 = Color(0xff1E4B61);
-  static const gray100 = Color(0xffF3F4F6);
+  
+  // Background Colors
+  static const scaffoldBackgroundLight = Color(0xFFF5F7FA);
+  static const scaffoldBackgroundDark = Color(0xFF121212);
+  static const cardBackgroundLight = Color(0xFFFFFFFF);
+  static const cardBackgroundDark = Color(0xFF1E1E1E);
+  
+  // Text Colors
+  static const textPrimary = Color(0xFF212121);
+  static const textSecondary = Color(0xFF757575);
+  static const textHint = Color(0xFFBDBDBD);
+  
+  // Legacy colors (keeping for compatibility)
   static const red = Color(0xffDC3545);
-  static const gray300 = Color(0xffD2D6DB);
-  static const gray200 = Color(0xffE5E7EB);
-  static const gray700 = Color(0xff475467);
-  static const subTextGray = Color(0xff475467);
+  static const subTextGray = Color(0xff757575);
 }
 
 Color stringToColor(String hexColor) {

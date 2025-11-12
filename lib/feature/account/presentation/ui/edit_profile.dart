@@ -135,7 +135,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               onTap: () => _pickAndUploadImage(context),
               child: const Icon(
                 Icons.add_a_photo,
-                color: AppColors.primary900,
+                color: AppColors.primaryBlue,
                 size: 30,
               ),
             ),

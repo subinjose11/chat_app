@@ -1,38 +1,124 @@
 import 'package:flutter/material.dart';
+import 'package:chat_app/core/styles/app_colors.dart';
 
-// Light theme
-final lightTheme = ThemeData.from(
-  colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+// AutoTrack Pro Light Theme
+final lightTheme = ThemeData(
   useMaterial3: true,
-).copyWith(
-  scaffoldBackgroundColor: Colors.white, // Body background for light theme
+  brightness: Brightness.light,
+  primaryColor: AppColors.primaryBlue,
+  scaffoldBackgroundColor: AppColors.scaffoldBackgroundLight,
+  colorScheme: const ColorScheme.light(
+    primary: AppColors.primaryBlue,
+    secondary: AppColors.primaryLight,
+    surface: AppColors.white,
+    error: AppColors.error,
+  ),
   appBarTheme: const AppBarTheme(
-    backgroundColor: Colors.white, // Light theme AppBar color
-    foregroundColor: Colors.black, // Light theme AppBar text/icon color
+    backgroundColor: AppColors.white,
+    foregroundColor: AppColors.textPrimary,
+    elevation: 0,
+    centerTitle: true,
+    iconTheme: IconThemeData(color: AppColors.textPrimary),
+  ),
+  cardTheme: CardThemeData(
+    color: AppColors.cardBackgroundLight,
+    elevation: 2,
+    shadowColor: AppColors.gray300.withOpacity(0.5),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
   ),
   bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-    backgroundColor: Colors.white, // Light theme BottomNavBar background
-    selectedItemColor: Colors.blue, // Selected item color
-    unselectedItemColor: Colors.black54, // Unselected item color
+    backgroundColor: AppColors.white,
+    selectedItemColor: AppColors.primaryBlue,
+    unselectedItemColor: AppColors.gray500,
+    type: BottomNavigationBarType.fixed,
+    elevation: 8,
   ),
+  floatingActionButtonTheme: const FloatingActionButtonThemeData(
+    backgroundColor: AppColors.primaryBlue,
+    foregroundColor: AppColors.white,
+  ),
+  elevatedButtonTheme: ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: AppColors.primaryBlue,
+      foregroundColor: AppColors.white,
+      elevation: 2,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+  ),
+  inputDecorationTheme: InputDecorationTheme(
+    filled: true,
+    fillColor: AppColors.gray100,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide.none,
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.primaryBlue, width: 2),
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+  ),
+  fontFamily: 'Roboto',
 );
 
-// Dark theme
-final darkTheme = ThemeData.from(
-  colorScheme: ColorScheme.fromSeed(
-    seedColor: Colors.deepPurple,
-    brightness: Brightness.dark,
-  ),
+// AutoTrack Pro Dark Theme
+final darkTheme = ThemeData(
   useMaterial3: true,
-).copyWith(
-  scaffoldBackgroundColor: Colors.black, // Body background for dark theme
+  brightness: Brightness.dark,
+  primaryColor: AppColors.primaryBlue,
+  scaffoldBackgroundColor: AppColors.scaffoldBackgroundDark,
+  colorScheme: const ColorScheme.dark(
+    primary: AppColors.primaryBlue,
+    secondary: AppColors.primaryLight,
+    surface: AppColors.cardBackgroundDark,
+    error: AppColors.error,
+  ),
   appBarTheme: const AppBarTheme(
-    backgroundColor: Colors.black, // Dark theme AppBar color
-    foregroundColor: Colors.white, // Dark theme AppBar text/icon color
+    backgroundColor: AppColors.cardBackgroundDark,
+    foregroundColor: AppColors.white,
+    elevation: 0,
+    centerTitle: true,
+    iconTheme: IconThemeData(color: AppColors.white),
+  ),
+  cardTheme: CardThemeData(
+    color: AppColors.cardBackgroundDark,
+    elevation: 2,
+    shadowColor: AppColors.pureBlack.withOpacity(0.5),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
   ),
   bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-    backgroundColor: Colors.black, // Dark theme BottomNavBar background
-    selectedItemColor: Colors.deepPurpleAccent, // Selected item color
-    unselectedItemColor: Colors.grey, // Unselected item color
+    backgroundColor: AppColors.cardBackgroundDark,
+    selectedItemColor: AppColors.primaryBlue,
+    unselectedItemColor: AppColors.gray500,
+    type: BottomNavigationBarType.fixed,
+    elevation: 8,
   ),
+  floatingActionButtonTheme: const FloatingActionButtonThemeData(
+    backgroundColor: AppColors.primaryBlue,
+    foregroundColor: AppColors.white,
+  ),
+  elevatedButtonTheme: ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: AppColors.primaryBlue,
+      foregroundColor: AppColors.white,
+      elevation: 2,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+  ),
+  inputDecorationTheme: InputDecorationTheme(
+    filled: true,
+    fillColor: AppColors.gray800,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide.none,
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AppColors.primaryBlue, width: 2),
+    ),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+  ),
+  fontFamily: 'Roboto',
 );

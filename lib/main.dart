@@ -26,12 +26,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Chat App',
+      title: 'AutoTrack Pro',
       debugShowCheckedModeBanner: false,
-      theme: lightTheme, // Replace with your custom light theme
-      darkTheme: darkTheme, // Replace with your custom dark theme
-      themeMode:
-          ThemeMode.system, // Automatically switches based on system theme
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: ThemeMode.system,
       routerConfig: AppRouter.router,
     );
   }

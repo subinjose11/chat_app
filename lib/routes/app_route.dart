@@ -3,9 +3,16 @@ import 'package:chat_app/feature/auth/data/model/user_model.dart';
 import 'package:chat_app/feature/auth/presentation/ui/log_in_page.dart';
 import 'package:chat_app/feature/auth/presentation/ui/sign_up_page.dart';
 import 'package:chat_app/feature/auth/presentation/ui/user_info_page.dart';
-import 'package:chat_app/feature/home/presentation/ui/home.dart';
-import 'package:chat_app/feature/splash/presentation/ui/landing_screen.dart';
 import 'package:chat_app/feature/splash/presentation/ui/splash_screen.dart';
+import 'package:chat_app/feature/home/presentation/ui/home.dart';
+import 'package:chat_app/feature/dashboard/dashboard_screen.dart';
+import 'package:chat_app/feature/vehicles/vehicle_list_screen.dart';
+import 'package:chat_app/feature/vehicles/vehicle_detail_screen.dart';
+import 'package:chat_app/feature/service_orders/service_order_screen.dart';
+import 'package:chat_app/feature/reports/reports_screen.dart';
+import 'package:chat_app/feature/customers/customer_list_screen.dart';
+import 'package:chat_app/feature/settings/settings_screen.dart';
+import 'package:chat_app/models/vehicle.dart';
 import 'package:go_router/go_router.dart';
 
 class AppRouter {
@@ -16,11 +23,6 @@ class AppRouter {
         path: '/',
         name: 'splash',
         builder: (context, state) => const SplashPage(),
-      ),
-      GoRoute(
-        path: '/landing',
-        name: 'landing',
-        builder: (context, state) => const LandingScreen(),
       ),
       GoRoute(
         path: '/login',
@@ -40,7 +42,7 @@ class AppRouter {
       GoRoute(
         path: '/home',
         name: 'home',
-        builder: (context, state) => const HomePage(),
+        builder: (context, state) => const Home(),
       ),
       GoRoute(
         path: '/edit-profile',
@@ -49,6 +51,44 @@ class AppRouter {
           final user = state.extra as UserModel;
           return EditProfileScreen(user: user);
         },
+      ),
+      GoRoute(
+        path: '/dashboard',
+        name: 'dashboard',
+        builder: (context, state) => const DashboardScreen(),
+      ),
+      GoRoute(
+        path: '/vehicles',
+        name: 'vehicles',
+        builder: (context, state) => const VehicleListScreen(),
+      ),
+      GoRoute(
+        path: '/vehicle-detail',
+        name: 'vehicle-detail',
+        builder: (context, state) {
+          final vehicle = state.extra as Vehicle;
+          return VehicleDetailScreen(vehicle: vehicle);
+        },
+      ),
+      GoRoute(
+        path: '/service-order',
+        name: 'service-order',
+        builder: (context, state) => const ServiceOrderScreen(),
+      ),
+      GoRoute(
+        path: '/reports',
+        name: 'reports',
+        builder: (context, state) => const ReportsScreen(),
+      ),
+      GoRoute(
+        path: '/customers',
+        name: 'customers',
+        builder: (context, state) => const CustomerListScreen(),
+      ),
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        builder: (context, state) => const SettingsScreen(),
       ),
     ],
   );
