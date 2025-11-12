@@ -1,10 +1,10 @@
 import 'package:chat_app/feature/home/presentation/controller/home_controller.dart';
 import 'package:chat_app/feature/home/presentation/widget/bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:chat_app/feature/dashboard/dashboard_screen.dart';
-import 'package:chat_app/feature/vehicles/vehicle_list_screen.dart';
-import 'package:chat_app/feature/service_orders/service_order_screen.dart';
-import 'package:chat_app/feature/reports/reports_screen.dart';
+import 'package:chat_app/feature/dashboard/presentation/ui/dashboard_screen.dart';
+import 'package:chat_app/feature/vehicles/presentation/ui/vehicle_list_screen.dart';
+import 'package:chat_app/feature/service_orders/presentation/ui/service_orders_list_screen.dart';
+import 'package:chat_app/feature/reports/presentation/ui/reports_list_screen.dart';
 import 'package:chat_app/feature/settings/settings_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,15 +14,15 @@ class Home extends ConsumerStatefulWidget {
   });
 
   @override
-    ConsumerState<Home> createState() => _HomeState();
+  ConsumerState<Home> createState() => _HomeState();
 }
 
 class _HomeState extends ConsumerState<Home> {
   final List<Widget> _screens = const [
     DashboardScreen(),
     VehicleListScreen(),
-    ServiceOrderScreen(),
-    ReportsScreen(),
+    ServiceOrdersListScreen(),
+    ReportsListScreen(),
     SettingsScreen(),
   ];
 

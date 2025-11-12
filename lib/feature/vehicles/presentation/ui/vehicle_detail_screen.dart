@@ -1,10 +1,47 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chat_app/core/styles/app_colors.dart';
 import 'package:chat_app/models/vehicle.dart';
 import 'package:chat_app/models/service_order.dart';
+import 'package:chat_app/feature/service_orders/presentation/controller/service_order_controller.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 
-class VehicleDetailScreen extends StatelessWidget {
+void _showEditDialog(BuildContext context, WidgetRef ref, Vehicle vehicle) {
+  // TODO: Implement edit dialog with form
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text('Edit functionality - To be implemented')),
+  );
+}
+
+void _showDeleteConfirmation(BuildContext context, WidgetRef ref, Vehicle vehicle) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Delete Vehicle'),
+      content: const Text('Are you sure you want to delete this vehicle? This action cannot be undone.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            // ref.read(vehicleControllerProvider).deleteVehicle(context, vehicle.id);
+            Navigator.pop(context);
+            context.pop(); // Go back to list
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.error,
+          ),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
+}
+
+class VehicleDetailScreen extends ConsumerWidget {
   final Vehicle vehicle;
 
   const VehicleDetailScreen({
@@ -12,52 +49,12 @@ class VehicleDetailScreen extends StatelessWidget {
     required this.vehicle,
   });
 
-  // Sample service history - replace with actual data
-  List<ServiceOrder> get _serviceHistory => [
-        ServiceOrder(
-          id: '1',
-          vehicleId: vehicle.id,
-          customerId: vehicle.customerId,
-          serviceType: 'Oil Change',
-          description: 'Regular oil change and filter replacement',
-          laborCost: 50,
-          partsCost: 45,
-          totalCost: 95,
-          status: 'completed',
-          createdAt: DateTime(2024, 10, 15),
-          completedAt: DateTime(2024, 10, 15),
-        ),
-        ServiceOrder(
-          id: '2',
-          vehicleId: vehicle.id,
-          customerId: vehicle.customerId,
-          serviceType: 'Brake Service',
-          description: 'Front brake pad replacement',
-          laborCost: 100,
-          partsCost: 150,
-          totalCost: 250,
-          status: 'completed',
-          createdAt: DateTime(2024, 9, 5),
-          completedAt: DateTime(2024, 9, 6),
-        ),
-        ServiceOrder(
-          id: '3',
-          vehicleId: vehicle.id,
-          customerId: vehicle.customerId,
-          serviceType: 'Tire Rotation',
-          description: 'Rotate and balance all four tires',
-          laborCost: 40,
-          partsCost: 0,
-          totalCost: 40,
-          status: 'completed',
-          createdAt: DateTime(2024, 8, 10),
-          completedAt: DateTime(2024, 8, 10),
-        ),
-      ];
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // Fetch actual service orders from Firebase
+    final serviceOrdersAsync = ref.watch(vehicleServiceOrdersStreamProvider(vehicle.id));
 
     return Scaffold(
       appBar: AppBar(
@@ -66,7 +63,13 @@ class VehicleDetailScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
-              // TODO: Navigate to edit vehicle
+              _showEditDialog(context, ref, vehicle);
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete),
+            onPressed: () {
+              _showDeleteConfirmation(context, ref, vehicle);
             },
           ),
           const SizedBox(width: 8),
@@ -158,7 +161,7 @@ class VehicleDetailScreen extends StatelessWidget {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: _getStatusColor().withOpacity(0.1),
+                          color: _getStatusColor(vehicle.serviceStatus).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -166,7 +169,7 @@ class VehicleDetailScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: _getStatusColor(),
+                            color: _getStatusColor(vehicle.serviceStatus),
                           ),
                         ),
                       ),
@@ -196,8 +199,12 @@ class VehicleDetailScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _serviceHistory.isEmpty
-                      ? Center(
+                  
+                  // Display service orders from Firebase
+                  serviceOrdersAsync.when(
+                    data: (orders) {
+                      if (orders.isEmpty) {
+                        return Center(
                           child: Padding(
                             padding: const EdgeInsets.all(32),
                             child: Column(
@@ -221,16 +228,52 @@ class VehicleDetailScreen extends StatelessWidget {
                               ],
                             ),
                           ),
-                        )
-                      : ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _serviceHistory.length,
-                          itemBuilder: (context, index) {
-                            final service = _serviceHistory[index];
-                            return _buildTimelineItem(isDark, service, index);
-                          },
+                        );
+                      }
+                      
+                      return ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: orders.length,
+                        itemBuilder: (context, index) {
+                          final service = orders[index];
+                          return Container(
+                            key: ValueKey('service_order_${service.id}'),
+                            child: _buildTimelineItem(isDark, service, index),
+                          );
+                        },
+                      );
+                    },
+                    loading: () => const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32),
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                    error: (error, stack) => Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 48,
+                              color: AppColors.error,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Error loading service history',
+                              style: TextStyle(
+                                color: isDark
+                                    ? AppColors.gray400
+                                    : AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
                         ),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -254,10 +297,10 @@ class VehicleDetailScreen extends StatelessWidget {
         ),
         child: ElevatedButton.icon(
           onPressed: () {
-            // TODO: Navigate to create service order
+            context.push('/service-order', extra: vehicle);
           },
           icon: const Icon(Icons.add),
-          label: const Text('Create New Order'),
+          label: const Text('Add New Service'),
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 16),
           ),
@@ -266,8 +309,8 @@ class VehicleDetailScreen extends StatelessWidget {
     );
   }
 
-  Color _getStatusColor() {
-    switch (vehicle.serviceStatus.toLowerCase()) {
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
       case 'active':
       case 'in_progress':
         return AppColors.warning;
@@ -372,13 +415,13 @@ class VehicleDetailScreen extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
               ),
-              if (index < _serviceHistory.length - 1)
-                Expanded(
-                  child: Container(
-                    width: 2,
-                    color: isDark ? AppColors.gray700 : AppColors.gray300,
-                  ),
+              // Always show line connector except for last item (handled by ListView)
+              Expanded(
+                child: Container(
+                  width: 2,
+                  color: isDark ? AppColors.gray700 : AppColors.gray300,
                 ),
+              ),
             ],
           ),
           const SizedBox(width: 16),
@@ -429,13 +472,14 @@ class VehicleDetailScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    DateFormat('MMM dd, yyyy').format(service.createdAt),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? AppColors.gray500 : AppColors.textHint,
+                  if (service.createdAt != null)
+                    Text(
+                      DateFormat('MMM dd, yyyy').format(service.createdAt!),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? AppColors.gray500 : AppColors.textHint,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

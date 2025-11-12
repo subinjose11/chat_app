@@ -5,13 +5,22 @@ import 'package:chat_app/feature/auth/presentation/ui/sign_up_page.dart';
 import 'package:chat_app/feature/auth/presentation/ui/user_info_page.dart';
 import 'package:chat_app/feature/splash/presentation/ui/splash_screen.dart';
 import 'package:chat_app/feature/home/presentation/ui/home.dart';
-import 'package:chat_app/feature/dashboard/dashboard_screen.dart';
-import 'package:chat_app/feature/vehicles/vehicle_list_screen.dart';
-import 'package:chat_app/feature/vehicles/vehicle_detail_screen.dart';
-import 'package:chat_app/feature/service_orders/service_order_screen.dart';
-import 'package:chat_app/feature/reports/reports_screen.dart';
-import 'package:chat_app/feature/customers/customer_list_screen.dart';
+import 'package:chat_app/feature/dashboard/presentation/ui/dashboard_screen.dart';
+import 'package:chat_app/feature/vehicles/presentation/ui/vehicle_list_screen.dart';
+import 'package:chat_app/feature/vehicles/presentation/ui/vehicle_detail_screen.dart';
+import 'package:chat_app/feature/service_orders/presentation/ui/service_order_screen.dart';
+import 'package:chat_app/feature/service_orders/presentation/ui/service_orders_list_screen.dart';
+import 'package:chat_app/feature/reports/presentation/ui/reports_list_screen.dart';
+import 'package:chat_app/feature/reports/presentation/ui/report_detail_screen.dart';
+import 'package:chat_app/feature/vehicles/presentation/ui/vehicle_registration_screen.dart';
+import 'package:chat_app/models/service_order.dart';
+import 'package:chat_app/feature/customers/presentation/ui/customer_list_screen.dart';
 import 'package:chat_app/feature/settings/settings_screen.dart';
+import 'package:chat_app/feature/payments/presentation/ui/payments_screen.dart';
+import 'package:chat_app/feature/expenses/presentation/ui/expenses_screen.dart';
+import 'package:chat_app/feature/inventory/presentation/ui/inventory_screen.dart';
+import 'package:chat_app/feature/appointments/presentation/ui/appointments_screen.dart';
+import 'package:chat_app/feature/analytics/presentation/ui/analytics_screen.dart';
 import 'package:chat_app/models/vehicle.dart';
 import 'package:go_router/go_router.dart';
 
@@ -73,12 +82,43 @@ class AppRouter {
       GoRoute(
         path: '/service-order',
         name: 'service-order',
-        builder: (context, state) => const ServiceOrderScreen(),
+        builder: (context, state) {
+          final vehicle = state.extra as Vehicle?;
+          return ServiceOrderScreen(vehicle: vehicle);
+        },
+      ),
+      GoRoute(
+        path: '/service-order-edit',
+        name: 'service-order-edit',
+        builder: (context, state) {
+          final order = state.extra as ServiceOrder?;
+          return ServiceOrderScreen(existingOrder: order);
+        },
+      ),
+      GoRoute(
+        path: '/service-orders',
+        name: 'service-orders',
+        builder: (context, state) => const ServiceOrdersListScreen(),
       ),
       GoRoute(
         path: '/reports',
         name: 'reports',
-        builder: (context, state) => const ReportsScreen(),
+        builder: (context, state) => const ReportsListScreen(),
+      ),
+      GoRoute(
+        path: '/report-detail',
+        name: 'report-detail',
+        builder: (context, state) {
+          final order = state.extra as ServiceOrder?;
+          return ReportDetailScreen(
+            serviceOrder: order ?? const ServiceOrder(),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/vehicle-registration',
+        name: 'vehicle-registration',
+        builder: (context, state) => const VehicleRegistrationScreen(),
       ),
       GoRoute(
         path: '/customers',
@@ -89,6 +129,31 @@ class AppRouter {
         path: '/settings',
         name: 'settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/payments',
+        name: 'payments',
+        builder: (context, state) => const PaymentsScreen(),
+      ),
+      GoRoute(
+        path: '/expenses',
+        name: 'expenses',
+        builder: (context, state) => const ExpensesScreen(),
+      ),
+      GoRoute(
+        path: '/inventory',
+        name: 'inventory',
+        builder: (context, state) => const InventoryScreen(),
+      ),
+      GoRoute(
+        path: '/appointments',
+        name: 'appointments',
+        builder: (context, state) => const AppointmentsScreen(),
+      ),
+      GoRoute(
+        path: '/analytics',
+        name: 'analytics',
+        builder: (context, state) => const AnalyticsScreen(),
       ),
     ],
   );

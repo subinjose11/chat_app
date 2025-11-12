@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:chat_app/core/styles/app_colors.dart';
+import 'package:chat_app/core/services/backup_service.dart';
 import 'package:go_router/go_router.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -193,39 +194,72 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Business Settings Section
-          _buildSectionTitle(isDark, 'Business Settings'),
+          // Business Features Section
+          _buildSectionTitle(isDark, 'Business Features'),
           const SizedBox(height: 12),
           _buildSettingsCard(
             isDark,
             [
               _buildActionTile(
                 isDark,
-                'Workshop Details',
-                'Edit workshop name and contact info',
-                Icons.business,
-                () {
-                  // TODO: Navigate to workshop details
-                },
+                'Payments',
+                'Track payments and revenue',
+                Icons.payment,
+                () => context.push('/payments'),
               ),
               const Divider(height: 1),
               _buildActionTile(
                 isDark,
-                'Invoice Settings',
-                'Configure invoice templates',
+                'Expenses',
+                'Manage business expenses',
                 Icons.receipt_long,
-                () {
-                  // TODO: Navigate to invoice settings
-                },
+                () => context.push('/expenses'),
               ),
               const Divider(height: 1),
               _buildActionTile(
                 isDark,
-                'Tax Settings',
-                'Manage tax rates and calculations',
-                Icons.calculate,
+                'Inventory',
+                'Track parts and stock levels',
+                Icons.inventory_2,
+                () => context.push('/inventory'),
+              ),
+              const Divider(height: 1),
+              _buildActionTile(
+                isDark,
+                'Appointments',
+                'Schedule and manage appointments',
+                Icons.event,
+                () => context.push('/appointments'),
+              ),
+              const Divider(height: 1),
+              _buildActionTile(
+                isDark,
+                'Analytics',
+                'View business insights and charts',
+                Icons.analytics,
+                () => context.push('/analytics'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // Security Section
+          _buildSectionTitle(isDark, 'Security'),
+          const SizedBox(height: 12),
+          _buildSettingsCard(
+            isDark,
+            [
+              _buildActionTile(
+                isDark,
+                'Biometric Authentication',
+                'Enable fingerprint/face unlock',
+                Icons.fingerprint,
                 () {
-                  // TODO: Navigate to tax settings
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text(
+                            'Biometric authentication available in device settings')),
+                  );
                 },
               ),
             ],
@@ -305,9 +339,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: isDark
-                ? Colors.black26
-                : AppColors.gray300.withOpacity(0.3),
+            color: isDark ? Colors.black26 : AppColors.gray300.withOpacity(0.3),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -341,15 +373,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Row(
             children: [
               Expanded(
-                child: _buildThemeOption('Light', 'light', Icons.light_mode, isDark),
+                child: _buildThemeOption(
+                    'Light', 'light', Icons.light_mode, isDark),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildThemeOption('Dark', 'dark', Icons.dark_mode, isDark),
+                child:
+                    _buildThemeOption('Dark', 'dark', Icons.dark_mode, isDark),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _buildThemeOption('System', 'system', Icons.settings_brightness, isDark),
+                child: _buildThemeOption(
+                    'System', 'system', Icons.settings_brightness, isDark),
               ),
             ],
           ),
@@ -358,9 +393,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildThemeOption(String label, String value, IconData icon, bool isDark) {
+  Widget _buildThemeOption(
+      String label, String value, IconData icon, bool isDark) {
     final isSelected = _themeMode == value;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() => _themeMode = value);
@@ -499,7 +535,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showBackupDialog(BuildContext context) {
+  Future<void> _showBackupDialog(BuildContext context) async {
     showDialog(
       context: context,
       builder: (context) {
@@ -514,11 +550,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(context);
+
+                // Show loading
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Backup created successfully!')),
+                  const SnackBar(content: Text('Creating backup...')),
                 );
+
+                try {
+                  final backupFile = await BackupService.backupAllData();
+
+                  if (backupFile != null && context.mounted) {
+                    // Share the backup file
+                    await BackupService.shareBackup(backupFile);
+
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content:
+                              Text('Backup created and shared successfully!'),
+                          backgroundColor: AppColors.success,
+                        ),
+                      );
+                    }
+                  } else if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Failed to create backup'),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: ${e.toString()}'),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                  }
+                }
               },
               child: const Text('Backup'),
             ),
@@ -528,7 +601,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showRestoreDialog(BuildContext context) {
+  Future<void> _showRestoreDialog(BuildContext context) async {
     showDialog(
       context: context,
       builder: (context) {
@@ -543,11 +616,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(context);
+
+                // Show loading
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Data restored successfully!')),
+                  const SnackBar(content: Text('Restoring data...')),
                 );
+
+                try {
+                  final success = await BackupService.restoreFromBackup();
+
+                  if (success && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Data restored successfully!'),
+                        backgroundColor: AppColors.success,
+                      ),
+                    );
+                  } else if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Restore cancelled or failed'),
+                        backgroundColor: AppColors.warning,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: ${e.toString()}'),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                  }
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.warning,
@@ -593,4 +697,3 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 }
-

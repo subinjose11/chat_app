@@ -1,0 +1,322 @@
+// ignore_for_file: use_build_context_synchronously
+
+import 'dart:developer';
+import 'dart:io';
+import 'package:chat_app/core/utils/utils.dart';
+import 'package:chat_app/models/service_order.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+
+class ServiceOrderRepository {
+  final FirebaseFirestore firestore;
+  final FirebaseStorage storage;
+
+  ServiceOrderRepository({
+    required this.firestore,
+    required this.storage,
+  });
+
+  // Upload photo to Firebase Storage
+  Future<String?> uploadPhoto(XFile photo, String orderId, String type) async {
+    try {
+      final ref = storage
+          .ref()
+          .child('service_orders')
+          .child(orderId)
+          .child('$type/${DateTime.now().millisecondsSinceEpoch}.jpg');
+
+      await ref.putFile(File(photo.path));
+      final downloadUrl = await ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      log('Error uploading photo: $e');
+      return null;
+    }
+  }
+
+  // Create ServiceOrder
+  Future<void> createServiceOrder(
+    BuildContext context,
+    ServiceOrder serviceOrder,
+    List<XFile> beforePhotos,
+    List<XFile> afterPhotos,
+  ) async {
+    try {
+      // Use existing ID if provided, otherwise generate new one
+      final orderId = serviceOrder.id.isNotEmpty
+          ? serviceOrder.id
+          : firestore.collection('service_orders').doc().id;
+      final docRef = firestore.collection('service_orders').doc(orderId);
+
+      // Upload photos
+      List<String> beforeUrls = [];
+      List<String> afterUrls = [];
+
+      for (var photo in beforePhotos) {
+        final url = await uploadPhoto(photo, orderId, 'before');
+        if (url != null) beforeUrls.add(url);
+      }
+
+      for (var photo in afterPhotos) {
+        final url = await uploadPhoto(photo, orderId, 'after');
+        if (url != null) afterUrls.add(url);
+      }
+
+      final orderWithData = serviceOrder.copyWith(
+        id: orderId,
+        createdAt: DateTime.now(),
+        beforePhotos: beforeUrls,
+        afterPhotos: afterUrls,
+      );
+
+      await docRef.set(orderWithData.toJson());
+
+      if (context.mounted) {
+        showSnackBar(
+            content: 'Service order created successfully!', context: context);
+      }
+    } on FirebaseException catch (e) {
+      log('Firebase error creating service order: ${e.message}');
+      if (context.mounted) {
+        showSnackBar(
+          content: e.message ?? 'Failed to create service order',
+          context: context,
+        );
+      }
+    } catch (e) {
+      log('Error creating service order: $e');
+      if (context.mounted) {
+        showSnackBar(content: 'Error: ${e.toString()}', context: context);
+      }
+    }
+  }
+
+  // Get all service orders as stream
+  Stream<List<ServiceOrder>> getServiceOrdersStream() {
+    try {
+      return firestore
+          .collection('service_orders')
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .map((snapshot) {
+        return snapshot.docs
+            .map((doc) {
+              try {
+                return ServiceOrder.fromJson({...doc.data(), 'id': doc.id});
+              } catch (e) {
+                log('Error parsing service order ${doc.id}: $e');
+                return null;
+              }
+            })
+            .whereType<ServiceOrder>()
+            .toList();
+      });
+    } catch (e) {
+      log('Error getting service orders stream: $e');
+      return Stream.value([]);
+    }
+  }
+
+  // Get service orders by vehicle
+  Stream<List<ServiceOrder>> getServiceOrdersByVehicle(String vehicleId) {
+    try {
+      return firestore
+          .collection('service_orders')
+          .where('vehicleId', isEqualTo: vehicleId)
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .map((snapshot) {
+        return snapshot.docs
+            .map((doc) {
+              try {
+                return ServiceOrder.fromJson({...doc.data(), 'id': doc.id});
+              } catch (e) {
+                log('Error parsing service order ${doc.id}: $e');
+                return null;
+              }
+            })
+            .whereType<ServiceOrder>()
+            .toList();
+      });
+    } catch (e) {
+      log('Error getting vehicle service orders: $e');
+      return Stream.value([]);
+    }
+  }
+
+  // Get service orders by customer
+  Stream<List<ServiceOrder>> getServiceOrdersByCustomer(String customerId) {
+    try {
+      return firestore
+          .collection('service_orders')
+          .where('customerId', isEqualTo: customerId)
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .map((snapshot) {
+        return snapshot.docs
+            .map((doc) {
+              try {
+                return ServiceOrder.fromJson({...doc.data(), 'id': doc.id});
+              } catch (e) {
+                log('Error parsing service order ${doc.id}: $e');
+                return null;
+              }
+            })
+            .whereType<ServiceOrder>()
+            .toList();
+      });
+    } catch (e) {
+      log('Error getting customer service orders: $e');
+      return Stream.value([]);
+    }
+  }
+
+  // Get single service order
+  Future<ServiceOrder?> getServiceOrder(String orderId) async {
+    try {
+      final doc =
+          await firestore.collection('service_orders').doc(orderId).get();
+      if (doc.exists) {
+        return ServiceOrder.fromJson({...doc.data()!, 'id': doc.id});
+      }
+      return null;
+    } catch (e) {
+      log('Error getting service order: $e');
+      return null;
+    }
+  }
+
+  // Update ServiceOrder
+  Future<void> updateServiceOrder(
+      BuildContext context, ServiceOrder serviceOrder) async {
+    try {
+      await firestore
+          .collection('service_orders')
+          .doc(serviceOrder.id)
+          .update(serviceOrder.toJson());
+
+      if (context.mounted) {
+        showSnackBar(
+            content: 'Service order updated successfully!', context: context);
+      }
+    } on FirebaseException catch (e) {
+      log('Firebase error updating service order: ${e.message}');
+      if (context.mounted) {
+        showSnackBar(
+          content: e.message ?? 'Failed to update service order',
+          context: context,
+        );
+      }
+    } catch (e) {
+      log('Error updating service order: $e');
+      if (context.mounted) {
+        showSnackBar(content: 'Error: ${e.toString()}', context: context);
+      }
+    }
+  }
+
+  // Update service order status
+  Future<void> updateServiceOrderStatus(
+    BuildContext context,
+    String orderId,
+    String status,
+  ) async {
+    try {
+      final updates = <String, dynamic>{
+        'status': status,
+      };
+
+      if (status == 'completed') {
+        updates['completedAt'] = DateTime.now().toIso8601String();
+      }
+
+      await firestore.collection('service_orders').doc(orderId).update(updates);
+
+      if (context.mounted) {
+        showSnackBar(content: 'Status updated to $status', context: context);
+      }
+    } catch (e) {
+      log('Error updating service order status: $e');
+      if (context.mounted) {
+        showSnackBar(content: 'Error: ${e.toString()}', context: context);
+      }
+    }
+  }
+
+  // Delete ServiceOrder
+  Future<void> deleteServiceOrder(BuildContext context, String orderId) async {
+    try {
+      await firestore.collection('service_orders').doc(orderId).delete();
+
+      if (context.mounted) {
+        showSnackBar(
+            content: 'Service order deleted successfully!', context: context);
+      }
+    } on FirebaseException catch (e) {
+      log('Firebase error deleting service order: ${e.message}');
+      if (context.mounted) {
+        showSnackBar(
+          content: e.message ?? 'Failed to delete service order',
+          context: context,
+        );
+      }
+    } catch (e) {
+      log('Error deleting service order: $e');
+      if (context.mounted) {
+        showSnackBar(content: 'Error: ${e.toString()}', context: context);
+      }
+    }
+  }
+
+  // Get analytics data
+  Future<Map<String, dynamic>> getAnalytics() async {
+    try {
+      final ordersSnapshot = await firestore.collection('service_orders').get();
+
+      double totalRevenue = 0;
+      int completedOrders = 0;
+      int pendingOrders = 0;
+      int activeOrders = 0;
+
+      for (var doc in ordersSnapshot.docs) {
+        final order = ServiceOrder.fromJson({...doc.data(), 'id': doc.id});
+
+        if (order.status == 'completed') {
+          totalRevenue += order.totalCost;
+          completedOrders++;
+        } else if (order.status == 'pending') {
+          pendingOrders++;
+        } else if (order.status == 'in_progress') {
+          activeOrders++;
+        }
+      }
+
+      return {
+        'totalRevenue': totalRevenue,
+        'completedOrders': completedOrders,
+        'pendingOrders': pendingOrders,
+        'activeOrders': activeOrders,
+        'totalOrders': ordersSnapshot.size,
+      };
+    } catch (e) {
+      log('Error getting analytics: $e');
+      return {
+        'totalRevenue': 0.0,
+        'completedOrders': 0,
+        'pendingOrders': 0,
+        'activeOrders': 0,
+        'totalOrders': 0,
+      };
+    }
+  }
+}
+
+final serviceOrderRepositoryProvider = Provider((ref) {
+  return ServiceOrderRepository(
+    firestore: FirebaseFirestore.instance,
+    storage: FirebaseStorage.instance,
+  );
+});
