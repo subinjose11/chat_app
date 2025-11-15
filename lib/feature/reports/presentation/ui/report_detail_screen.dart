@@ -409,18 +409,127 @@ class _ReportDetailScreenState extends ConsumerState<ReportDetailScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Labor Cost
-                  _buildInfoRow(Icons.engineering, 'Labor Cost',
-                      '₹${widget.serviceOrder.laborCost.toStringAsFixed(2)}'),
-
-                  // Parts Breakdown
-                  if (widget.serviceOrder.parts.isNotEmpty) ...[
-                    const SizedBox(height: 8),
+                  // Labor Breakdown
+                  if (widget.serviceOrder.laborItems.isNotEmpty) ...[
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.engineering,
+                                size: 18, color: AppColors.gray500),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Labor:',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? AppColors.white
+                                    : AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ...widget.serviceOrder.laborItems
+                        .map((labor) => Padding(
+                              padding:
+                                  const EdgeInsets.only(bottom: 8, left: 16),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.handyman,
+                                          size: 16, color: AppColors.gray500),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        labor.name,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: isDark
+                                              ? AppColors.gray300
+                                              : AppColors.textSecondary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    '₹${labor.cost.toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: isDark
+                                          ? AppColors.white
+                                          : AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ))
+                        .toList(),
+                    const Padding(
+                      padding: EdgeInsets.only(
+                          left: 16, right: 16, top: 4, bottom: 8),
+                      child: Divider(height: 1),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 16, bottom: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Total Labor:',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isDark
+                                  ? AppColors.white
+                                  : AppColors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            '₹${widget.serviceOrder.laborItems.fold<double>(0, (sum, item) => sum + item.cost).toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: isDark
+                                  ? AppColors.white
+                                  : AppColors.textPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ]
+                  // Backward compatibility: show old labor cost if no labor items
+                  else if (widget.serviceOrder.laborCost > 0) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.engineering,
+                                size: 18, color: AppColors.gray500),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Labor Cost',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? AppColors.white
+                                    : AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
                         Text(
-                          'Parts:',
+                          '₹${widget.serviceOrder.laborCost.toStringAsFixed(2)}',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -428,6 +537,34 @@ class _ReportDetailScreenState extends ConsumerState<ReportDetailScreen> {
                                 ? AppColors.white
                                 : AppColors.textPrimary,
                           ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+
+                  // Parts Breakdown
+                  if (widget.serviceOrder.parts.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.build_circle,
+                                size: 18, color: AppColors.gray500),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Parts & Materials:',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? AppColors.white
+                                    : AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -440,31 +577,50 @@ class _ReportDetailScreenState extends ConsumerState<ReportDetailScreen> {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Row(
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.inventory_2_outlined,
+                                            size: 16, color: AppColors.gray500),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            '${part.name} ${part.quantity > 1 ? 'x${part.quantity}' : ''}',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: isDark
+                                                  ? AppColors.gray300
+                                                  : AppColors.textSecondary,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
-                                      const Icon(Icons.build_circle,
-                                          size: 16, color: AppColors.gray500),
-                                      const SizedBox(width: 8),
                                       Text(
-                                        part.name,
+                                        '₹${(part.cost * part.quantity).toStringAsFixed(2)}',
                                         style: TextStyle(
                                           fontSize: 13,
+                                          fontWeight: FontWeight.w600,
                                           color: isDark
-                                              ? AppColors.gray300
-                                              : AppColors.textSecondary,
+                                              ? AppColors.white
+                                              : AppColors.textPrimary,
                                         ),
                                       ),
+                                      if (part.quantity > 1)
+                                        Text(
+                                          '@ ₹${part.cost.toStringAsFixed(2)} each',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: isDark
+                                                ? AppColors.gray400
+                                                : AppColors.textSecondary,
+                                          ),
+                                        ),
                                     ],
-                                  ),
-                                  Text(
-                                    '₹${part.cost.toStringAsFixed(2)}',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
-                                      color: isDark
-                                          ? AppColors.white
-                                          : AppColors.textPrimary,
-                                    ),
                                   ),
                                 ],
                               ),
@@ -590,7 +746,7 @@ class _ReportDetailScreenState extends ConsumerState<ReportDetailScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.engineering,
                         size: 20,
                         color: AppColors.primaryBlue,
