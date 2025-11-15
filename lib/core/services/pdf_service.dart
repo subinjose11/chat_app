@@ -166,151 +166,6 @@ class PdfService {
     return _savePdf(pdf, 'invoice_${order.id.substring(0, 8)}');
   }
 
-  // Generate Invoice PDF
-  static Future<File> generateInvoice({
-    required ServiceOrder order,
-    Vehicle? vehicle,
-    Customer? customer,
-    Payment? payment,
-  }) async {
-    final pdf = pw.Document();
-
-    pdf.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        build: (context) => [
-          // Header
-          _buildHeader('INVOICE'),
-          pw.SizedBox(height: 20),
-
-          // Invoice Info
-          pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text('Invoice #${order.id.substring(0, 8).toUpperCase()}',
-                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                  pw.Text(
-                      'Date: ${DateFormat('MMM dd, yyyy').format(order.createdAt ?? DateTime.now())}'),
-                  pw.Text('Status: ${order.status.toUpperCase()}'),
-                ],
-              ),
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.end,
-                children: [
-                  pw.Text('RN Auto garage',
-                      style: pw.TextStyle(
-                          fontWeight: pw.FontWeight.bold, fontSize: 16)),
-                  pw.Text('Professional Auto Service'),
-                  pw.Text('Phone: +1 234 567 890'),
-                ],
-              ),
-            ],
-          ),
-          pw.SizedBox(height: 30),
-
-          // Bill To
-          if (customer != null) ...[
-            pw.Text('Bill To:',
-                style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 5),
-            pw.Text(customer.name),
-            pw.Text(customer.phone),
-            if (customer.email.isNotEmpty) pw.Text(customer.email),
-            pw.SizedBox(height: 20),
-          ],
-
-          // Vehicle Info
-          if (vehicle != null) ...[
-            pw.Text('Vehicle:',
-                style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 5),
-            pw.Text(
-                '${vehicle.numberPlate} - ${vehicle.make} ${vehicle.model}'),
-            pw.SizedBox(height: 20),
-          ],
-
-          // Service Table
-          pw.Table(
-            border: pw.TableBorder.all(color: PdfColors.grey),
-            children: [
-              // Header
-              pw.TableRow(
-                decoration: const pw.BoxDecoration(color: PdfColors.grey300),
-                children: [
-                  _buildTableCell('Description', isHeader: true),
-                  _buildTableCell('Amount', isHeader: true),
-                ],
-              ),
-              // Service Type
-              pw.TableRow(
-                children: [
-                  _buildTableCell(
-                      '${order.serviceType}${order.description.isNotEmpty ? '\n${order.description}' : ''}'),
-                  _buildTableCell(''),
-                ],
-              ),
-              // Labor
-              pw.TableRow(
-                children: [
-                  _buildTableCell('Labor'),
-                  _buildTableCell('Rs. ${order.laborCost.toStringAsFixed(2)}'),
-                ],
-              ),
-              // Parts
-              pw.TableRow(
-                children: [
-                  _buildTableCell('Parts & Materials'),
-                  _buildTableCell('Rs. ${order.partsCost.toStringAsFixed(2)}'),
-                ],
-              ),
-              // Total
-              pw.TableRow(
-                decoration: const pw.BoxDecoration(color: PdfColors.grey200),
-                children: [
-                  _buildTableCell('TOTAL', isHeader: true),
-                  _buildTableCell('Rs. ${order.totalCost.toStringAsFixed(2)}',
-                      isHeader: true),
-                ],
-              ),
-            ],
-          ),
-          pw.SizedBox(height: 30),
-
-          // Payment Info
-          if (payment != null) ...[
-            pw.Text('Payment Information:',
-                style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 5),
-            _buildInfoRow('Method', payment.paymentMethod.toUpperCase()),
-            _buildInfoRow('Status', payment.status.toUpperCase()),
-            if (payment.transactionId != null)
-              _buildInfoRow('Transaction ID', payment.transactionId!),
-            pw.SizedBox(height: 20),
-          ],
-
-          // Notes
-          if (order.notes != null && order.notes!.isNotEmpty) ...[
-            pw.Text('Notes:',
-                style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 5),
-            pw.Text(order.notes!),
-            pw.SizedBox(height: 20),
-          ],
-
-          // Footer
-          pw.Spacer(),
-          pw.Divider(),
-          pw.SizedBox(height: 10),
-          _buildFooter(),
-        ],
-      ),
-    );
-
-    return _savePdf(pdf, 'invoice_${order.id}');
-  }
 
   // NEW INVOICE TEMPLATE HELPERS
 
@@ -355,7 +210,7 @@ class PdfService {
                     ),
                     pw.SizedBox(height: 4),
                     pw.Text(
-                      'Ph: +91 1234567890  |  Email: info@rnautogarage.com',
+                      'Ph: +91 80152 52501  |  Email: regisudhakar@gmail.com',
                       style: const pw.TextStyle(
                         fontSize: 7,
                         color: PdfColors.white,
@@ -363,7 +218,7 @@ class PdfService {
                     ),
                     pw.SizedBox(height: 1),
                     pw.Text(
-                      'Address: Your Business Address, City, State - PIN',
+                      'Address: Karanampettai, Tirupur, Tamil Nadu',
                       style: const pw.TextStyle(
                         fontSize: 7,
                         color: PdfColors.white,
@@ -930,7 +785,7 @@ class PdfService {
                   ),
                   pw.SizedBox(height: 2),
                   pw.Text(
-                    'For queries: +91 1234567890',
+                    'For queries: +91 80152 52501',
                     style: const pw.TextStyle(
                         fontSize: 7, color: PdfColors.grey600),
                   ),
@@ -1023,87 +878,6 @@ class PdfService {
     );
   }
 
-  // OLD HELPERS (FOR generateInvoice method - kept for backward compatibility)
-
-  // Helper: Build Header
-  static pw.Widget _buildHeader(String title) {
-    return pw.Container(
-      alignment: pw.Alignment.center,
-      child: pw.Column(
-        children: [
-          pw.Text(
-            title,
-            style: pw.TextStyle(
-              fontSize: 28,
-              fontWeight: pw.FontWeight.bold,
-              color: PdfColors.blue900,
-            ),
-          ),
-          pw.SizedBox(height: 5),
-          pw.Container(
-            width: 100,
-            height: 3,
-            color: PdfColors.blue,
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Helper: Build Info Row (for generateInvoice)
-  static pw.Widget _buildInfoRow(String label, String value) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(vertical: 4),
-      child: pw.Row(
-        children: [
-          pw.Expanded(
-            flex: 2,
-            child: pw.Text(
-              '$label:',
-              style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-            ),
-          ),
-          pw.Expanded(
-            flex: 3,
-            child: pw.Text(value),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Helper: Build Table Cell
-  static pw.Widget _buildTableCell(String text, {bool isHeader = false}) {
-    return pw.Padding(
-      padding: const pw.EdgeInsets.all(8),
-      child: pw.Text(
-        text,
-        style: pw.TextStyle(
-          fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
-        ),
-      ),
-    );
-  }
-
-  // Helper: Build Footer
-  static pw.Widget _buildFooter() {
-    return pw.Column(
-      children: [
-        pw.Text(
-          'Thank you for your business!',
-          style: pw.TextStyle(
-            fontSize: 14,
-            fontWeight: pw.FontWeight.bold,
-          ),
-        ),
-        pw.SizedBox(height: 5),
-        pw.Text(
-          'RN Auto garage - Professional Auto Service Management',
-          style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey),
-        ),
-      ],
-    );
-  }
 
   // Save PDF to file
   static Future<File> _savePdf(pw.Document pdf, String filename) async {
