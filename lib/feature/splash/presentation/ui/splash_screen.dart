@@ -114,25 +114,11 @@ class SplashPageState extends State<SplashPage>
                           opacity: _fadeAnimation,
                           child: ScaleTransition(
                             scale: _scaleAnimation,
-                            child: Container(
-                              padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
-                              decoration: BoxDecoration(
-                                color: AppColors.white.withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color:
-                                        AppColors.white.withValues(alpha: 0.2),
-                                    blurRadius: 30,
-                                    spreadRadius: 10,
-                                  ),
-                                ],
-                              ),
-                              child: Icon(
-                                Icons.directions_car,
-                                size: isSmallScreen ? 80 : 100,
-                                color: AppColors.white,
-                              ),
+                            child: Image.asset(
+                              'assets/drawables/app_logo.png',
+                              width: isSmallScreen ? 80 : 100,
+                              height: isSmallScreen ? 80 : 100,
+                              fit: BoxFit.contain,
                             ),
                           ),
                         );
@@ -153,7 +139,7 @@ class SplashPageState extends State<SplashPage>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              "RN AutoGarage",
+                              "RNAG",
                               style: heading01.copyWith(
                                 color: AppColors.white,
                                 fontSize: isSmallScreen ? 26 : 32,

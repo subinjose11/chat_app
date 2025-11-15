@@ -75,6 +75,7 @@ dev_dependencies:
   freezed: ^2.5.7
   build_runner: ^2.4.9
   json_serializable: ^6.9.0
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
@@ -95,3 +96,20 @@ flutter:
           weight: 500
         - asset: assets/fonts/Axiforma Regular.otf
           weight: 400
+
+# App Icon Configuration
+# To change the app icon:
+# 1. Place your icon file (1024x1024 PNG) at: assets/drawables/app_icon.png
+# 2. Update the image_path below to point to your icon
+# 3. Run: flutter pub get && flutter pub run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/drawables/app_logo.png"
+  min_sdk_android: 21
+  remove_alpha_ios: true
+  adaptive_icon_background: "#ffffff"
+  adaptive_icon_foreground: "assets/drawables/app_logo.png"
+  # Notification icon (monochrome white/transparent for Android)
+  # If you have a separate notification icon, specify it here
+  # Otherwise, it will use the app icon

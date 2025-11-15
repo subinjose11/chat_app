@@ -71,6 +71,7 @@ class NotificationService {
     );
 
     // Initialize local notifications
+    // Using the app launcher icon for notifications
     const androidIcon = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iOSSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -198,6 +199,8 @@ class NotificationService {
       importance: Importance.high,
       priority: Priority.high,
       showWhen: true,
+      icon: '@mipmap/ic_launcher',
+      largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
     );
 
     const iOSDetails = DarwinNotificationDetails(
@@ -416,6 +419,8 @@ class NotificationService {
       channelDescription: _getChannelDescription(channelId),
       importance: Importance.high,
       priority: Priority.high,
+      icon: '@mipmap/ic_launcher',
+      largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
     );
 
     const iOSDetails = DarwinNotificationDetails();
