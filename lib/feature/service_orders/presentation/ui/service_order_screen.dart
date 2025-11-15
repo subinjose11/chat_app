@@ -474,6 +474,9 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                       // Customer Phone
                       TextFormField(
                         controller: _customerPhoneController,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                         decoration: InputDecoration(
                           labelText: 'Customer Phone',
                           prefixIcon: const Icon(Icons.phone_outlined),
@@ -576,9 +579,23 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                               : AppColors.gray50,
                         ),
                         textCapitalization: TextCapitalization.characters,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                              RegExp(r'[A-Za-z0-9]')),
+                          TextInputFormatter.withFunction(
+                            (oldValue, newValue) => TextEditingValue(
+                              text: newValue.text.toUpperCase(),
+                              selection: newValue.selection,
+                            ),
+                          ),
+                        ],
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter vehicle number';
+                          }
+                          // Validate that it contains only uppercase letters and numbers
+                          if (!RegExp(r'^[A-Z0-9]+$').hasMatch(value)) {
+                            return 'Only uppercase letters and numbers are allowed';
                           }
                           return null;
                         },

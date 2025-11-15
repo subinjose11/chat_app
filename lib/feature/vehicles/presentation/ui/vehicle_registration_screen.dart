@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chat_app/core/styles/app_colors.dart';
 import 'package:chat_app/models/vehicle.dart';
@@ -11,27 +12,35 @@ class VehicleRegistrationScreen extends ConsumerStatefulWidget {
   const VehicleRegistrationScreen({super.key});
 
   @override
-  ConsumerState<VehicleRegistrationScreen> createState() => _VehicleRegistrationScreenState();
+  ConsumerState<VehicleRegistrationScreen> createState() =>
+      _VehicleRegistrationScreenState();
 }
 
-class _VehicleRegistrationScreenState extends ConsumerState<VehicleRegistrationScreen> {
+class _VehicleRegistrationScreenState
+    extends ConsumerState<VehicleRegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Customer fields
   final _customerNameController = TextEditingController();
   final _phoneNumberController = TextEditingController();
   final _customerEmailController = TextEditingController();
   final _customerAddressController = TextEditingController();
-  
+
   // Vehicle fields
   final _vehicleNumberController = TextEditingController();
   final _modelController = TextEditingController();
   final _brandController = TextEditingController();
   final _yearController = TextEditingController();
   final _notesController = TextEditingController();
-  
+
   String _selectedFuelType = 'Petrol';
-  final List<String> _fuelTypes = ['Petrol', 'Diesel', 'Electric', 'Hybrid', 'CNG'];
+  final List<String> _fuelTypes = [
+    'Petrol',
+    'Diesel',
+    'Electric',
+    'Hybrid',
+    'CNG'
+  ];
 
   @override
   void dispose() {
@@ -68,17 +77,23 @@ class _VehicleRegistrationScreenState extends ConsumerState<VehicleRegistrationS
           id: customerId,
           name: _customerNameController.text,
           phone: _phoneNumberController.text,
-          email: _customerEmailController.text.isEmpty ? '' : _customerEmailController.text,
-          address: _customerAddressController.text.isEmpty ? null : _customerAddressController.text,
+          email: _customerEmailController.text.isEmpty
+              ? ''
+              : _customerEmailController.text,
+          address: _customerAddressController.text.isEmpty
+              ? null
+              : _customerAddressController.text,
           createdAt: DateTime.now(),
         );
 
         // Save customer
-        await ref.read(customerControllerProvider).createCustomer(context, customer);
-        
+        await ref
+            .read(customerControllerProvider)
+            .createCustomer(context, customer);
+
         // Small delay to ensure customer is saved
         await Future.delayed(const Duration(milliseconds: 300));
-        
+
         // Create vehicle with proper customer reference
         final vehicle = Vehicle(
           id: vehicleId,
@@ -93,15 +108,17 @@ class _VehicleRegistrationScreenState extends ConsumerState<VehicleRegistrationS
         );
 
         // Save vehicle
-        await ref.read(vehicleControllerProvider).createVehicle(context, vehicle);
-        
+        await ref
+            .read(vehicleControllerProvider)
+            .createVehicle(context, vehicle);
+
         if (mounted) {
           // Close loading dialog
           Navigator.pop(context);
-          
+
           // Navigate to vehicle details
           context.go('/home');
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Vehicle registered successfully!'),
@@ -113,7 +130,7 @@ class _VehicleRegistrationScreenState extends ConsumerState<VehicleRegistrationS
         if (mounted) {
           // Close loading dialog
           Navigator.pop(context);
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error registering vehicle: ${e.toString()}'),
@@ -153,7 +170,7 @@ class _VehicleRegistrationScreenState extends ConsumerState<VehicleRegistrationS
                 isDark,
               ),
               const SizedBox(height: 16),
-              
+
               Container(
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.gray800 : AppColors.white,
@@ -202,7 +219,6 @@ class _VehicleRegistrationScreenState extends ConsumerState<VehicleRegistrationS
                       ],
                     ),
                     const SizedBox(height: 20),
-
                     TextFormField(
                       controller: _customerNameController,
                       decoration: InputDecoration(
@@ -222,7 +238,6 @@ class _VehicleRegistrationScreenState extends ConsumerState<VehicleRegistrationS
                       },
                     ),
                     const SizedBox(height: 16),
-
                     TextFormField(
                       controller: _phoneNumberController,
                       decoration: InputDecoration(
@@ -243,7 +258,6 @@ class _VehicleRegistrationScreenState extends ConsumerState<VehicleRegistrationS
                       },
                     ),
                     const SizedBox(height: 16),
-
                     TextFormField(
                       controller: _customerEmailController,
                       decoration: InputDecoration(
@@ -258,7 +272,6 @@ class _VehicleRegistrationScreenState extends ConsumerState<VehicleRegistrationS
                       keyboardType: TextInputType.emailAddress,
                     ),
                     const SizedBox(height: 16),
-
                     TextFormField(
                       controller: _customerAddressController,
                       decoration: InputDecoration(
@@ -333,28 +346,40 @@ class _VehicleRegistrationScreenState extends ConsumerState<VehicleRegistrationS
                       ],
                     ),
                     const SizedBox(height: 20),
-
                     TextFormField(
                       controller: _vehicleNumberController,
                       decoration: InputDecoration(
                         labelText: 'Vehicle Number',
-                        hintText: 'e.g., ABC 1234',
                         prefixIcon: const Icon(Icons.pin_outlined),
+                        hintText: 'e.g., ABC 1234',
                         filled: true,
                         fillColor: isDark
                             ? AppColors.gray700.withOpacity(0.5)
                             : AppColors.gray50,
                       ),
                       textCapitalization: TextCapitalization.characters,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'[A-Za-z0-9]')),
+                        TextInputFormatter.withFunction(
+                          (oldValue, newValue) => TextEditingValue(
+                            text: newValue.text.toUpperCase(),
+                            selection: newValue.selection,
+                          ),
+                        ),
+                      ],
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter vehicle number';
+                        }
+                        // Validate that it contains only uppercase letters and numbers
+                        if (!RegExp(r'^[A-Z0-9]+$').hasMatch(value)) {
+                          return 'Only uppercase letters and numbers are allowed';
                         }
                         return null;
                       },
                     ),
                     const SizedBox(height: 16),
-
                     Row(
                       children: [
                         Expanded(
@@ -399,7 +424,6 @@ class _VehicleRegistrationScreenState extends ConsumerState<VehicleRegistrationS
                       ],
                     ),
                     const SizedBox(height: 16),
-
                     Row(
                       children: [
                         Expanded(
@@ -458,7 +482,6 @@ class _VehicleRegistrationScreenState extends ConsumerState<VehicleRegistrationS
                       ],
                     ),
                     const SizedBox(height: 16),
-
                     TextFormField(
                       controller: _notesController,
                       decoration: InputDecoration(
@@ -554,4 +577,3 @@ class _VehicleRegistrationScreenState extends ConsumerState<VehicleRegistrationS
     );
   }
 }
-

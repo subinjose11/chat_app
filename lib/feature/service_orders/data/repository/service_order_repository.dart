@@ -377,6 +377,66 @@ class ServiceOrderRepository {
     }
   }
 
+  // Delete all service orders for a vehicle
+  Future<void> deleteAllServiceOrdersByVehicle(
+      BuildContext context, String vehicleId) async {
+    try {
+      // Get all service orders for the vehicle
+      final snapshot = await firestore
+          .collection('service_orders')
+          .where('vehicleId', isEqualTo: vehicleId)
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        return; // No orders to delete
+      }
+
+      // Use batch write to delete all orders (max 500 per batch)
+      final batches = <WriteBatch>[];
+      WriteBatch? currentBatch = firestore.batch();
+      int batchCount = 0;
+
+      for (var doc in snapshot.docs) {
+        currentBatch!.delete(doc.reference);
+        batchCount++;
+
+        // Firestore batch limit is 500 operations
+        if (batchCount >= 500) {
+          batches.add(currentBatch);
+          currentBatch = firestore.batch();
+          batchCount = 0;
+        }
+      }
+
+      // Add the last batch if it has operations
+      if (batchCount > 0 && currentBatch != null) {
+        batches.add(currentBatch);
+      }
+
+      // Execute all batches
+      for (var batch in batches) {
+        await batch.commit();
+      }
+
+      log('Deleted ${snapshot.docs.length} service orders for vehicle $vehicleId');
+    } on FirebaseException catch (e) {
+      log('Firebase error deleting service orders: ${e.message}');
+      if (context.mounted) {
+        showSnackBar(
+          content: e.message ?? 'Failed to delete service orders',
+          context: context,
+        );
+      }
+      rethrow;
+    } catch (e) {
+      log('Error deleting service orders: $e');
+      if (context.mounted) {
+        showSnackBar(content: 'Error: ${e.toString()}', context: context);
+      }
+      rethrow;
+    }
+  }
+
   // Get analytics data
   Future<Map<String, dynamic>> getAnalytics() async {
     try {

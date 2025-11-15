@@ -37,6 +37,12 @@ class ServiceOrderController {
     serviceOrderRepository.deleteServiceOrder(context, orderId);
   }
 
+  Future<void> deleteAllServiceOrdersByVehicle(
+      BuildContext context, String vehicleId) async {
+    await serviceOrderRepository.deleteAllServiceOrdersByVehicle(
+        context, vehicleId);
+  }
+
   Future<ServiceOrder?> getServiceOrder(String orderId) {
     return serviceOrderRepository.getServiceOrder(orderId);
   }

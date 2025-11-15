@@ -405,29 +405,183 @@ void _showDeleteConfirmation(
     BuildContext context, WidgetRef ref, Vehicle vehicle) {
   showDialog(
     context: context,
-    builder: (context) => AlertDialog(
+    builder: (context) => _DeleteVehicleDialog(vehicle: vehicle),
+  );
+}
+
+class _DeleteVehicleDialog extends ConsumerStatefulWidget {
+  final Vehicle vehicle;
+
+  const _DeleteVehicleDialog({required this.vehicle});
+
+  @override
+  ConsumerState<_DeleteVehicleDialog> createState() =>
+      _DeleteVehicleDialogState();
+}
+
+class _DeleteVehicleDialogState extends ConsumerState<_DeleteVehicleDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _numberPlateController = TextEditingController();
+  bool _isDeleting = false;
+
+  @override
+  void dispose() {
+    _numberPlateController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _deleteVehicle() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // Check if entered number plate matches
+    final enteredNumber = _numberPlateController.text.trim().toUpperCase();
+    final vehicleNumber = widget.vehicle.numberPlate.trim().toUpperCase();
+
+    if (enteredNumber != vehicleNumber) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Number plate does not match. Please try again.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return;
+    }
+
+    setState(() {
+      _isDeleting = true;
+    });
+
+    try {
+      // Delete all service orders for this vehicle first
+      final serviceOrderController = ref.read(serviceOrderControllerProvider);
+      await serviceOrderController.deleteAllServiceOrdersByVehicle(
+          context, widget.vehicle.id);
+
+      // Then delete the vehicle
+      await ref.read(vehicleControllerProvider).deleteVehicle(
+            context,
+            widget.vehicle.id,
+          );
+
+      // Refresh the vehicles list silently
+      ref.read(vehiclesPaginationProvider.notifier).silentRefresh();
+
+      if (mounted) {
+        Navigator.pop(context);
+        context.pop(); // Go back to vehicle list
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isDeleting = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting vehicle: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AlertDialog(
       title: const Text('Delete Vehicle'),
-      content: const Text(
-          'Are you sure you want to delete this vehicle? This action cannot be undone.'),
+      content: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.8,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'This action cannot be undone. This will delete the vehicle and all its related service orders.',
+                style: TextStyle(
+                  color: isDark ? AppColors.gray300 : AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'To confirm, please enter the vehicle number plate:',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.white : AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                widget.vehicle.numberPlate,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryBlue,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _numberPlateController,
+                decoration: const InputDecoration(
+                  labelText: 'Enter Number Plate',
+                  hintText: 'Enter the number plate to confirm',
+                  prefixIcon: Icon(Icons.confirmation_number),
+                  border: OutlineInputBorder(),
+                ),
+                textCapitalization: TextCapitalization.characters,
+                enabled: !_isDeleting,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter the number plate';
+                  }
+                  return null;
+                },
+                onFieldSubmitted: (_) {
+                  if (!_isDeleting) {
+                    _deleteVehicle();
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: _isDeleting
+              ? null
+              : () {
+                  Navigator.pop(context);
+                },
           child: const Text('Cancel'),
         ),
         ElevatedButton(
-          onPressed: () {
-            // ref.read(vehicleControllerProvider).deleteVehicle(context, vehicle.id);
-            Navigator.pop(context);
-            context.pop(); // Go back to list
-          },
+          onPressed: _isDeleting ? null : _deleteVehicle,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.error,
+            foregroundColor: AppColors.white,
           ),
-          child: const Text('Delete'),
+          child: _isDeleting
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.white),
+                  ),
+                )
+              : const Text('Delete'),
         ),
       ],
-    ),
-  );
+    );
+  }
 }
 
 class VehicleDetailScreen extends ConsumerWidget {

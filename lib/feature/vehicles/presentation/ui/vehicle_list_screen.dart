@@ -15,7 +15,8 @@ class VehicleListScreen extends ConsumerStatefulWidget {
   ConsumerState<VehicleListScreen> createState() => _VehicleListScreenState();
 }
 
-class _VehicleListScreenState extends ConsumerState<VehicleListScreen> with WidgetsBindingObserver {
+class _VehicleListScreenState extends ConsumerState<VehicleListScreen>
+    with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -196,7 +197,7 @@ class _VehicleListScreenState extends ConsumerState<VehicleListScreen> with Widg
   void _showAddVehicleDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (context) => AddVehicleDialog(),
+      builder: (context) => const AddVehicleDialog(),
     );
   }
 }
@@ -323,19 +324,6 @@ class _AddVehicleDialogState extends ConsumerState<AddVehicleDialog> {
                 ),
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _customerIdController,
-                decoration: const InputDecoration(
-                  labelText: 'Customer ID',
-                  prefixIcon: Icon(Icons.person),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter customer ID';
-                  }
-                  return null;
-                },
-              ),
             ],
           ),
         ),
@@ -346,7 +334,7 @@ class _AddVehicleDialogState extends ConsumerState<AddVehicleDialog> {
           child: const Text('Cancel'),
         ),
         ElevatedButton(
-          onPressed: () {
+          onPressed: () async {
             if (_formKey.currentState!.validate()) {
               final vehicle = Vehicle(
                 numberPlate: _numberPlateController.text,
@@ -365,10 +353,16 @@ class _AddVehicleDialogState extends ConsumerState<AddVehicleDialog> {
                 createdAt: DateTime.now(),
               );
 
-              ref
+              await ref
                   .read(vehicleControllerProvider)
                   .createVehicle(context, vehicle);
-              Navigator.pop(context);
+
+              if (context.mounted) {
+                ref.read(vehiclesPaginationProvider.notifier).silentRefresh();
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+              }
             }
           },
           child: const Text('Add'),
