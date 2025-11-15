@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chat_app/core/styles/app_colors.dart';
 import 'package:chat_app/feature/service_orders/presentation/controller/service_order_controller.dart';
 import 'package:chat_app/feature/vehicles/presentation/controller/vehicle_controller.dart';
+import 'package:chat_app/feature/home/presentation/controller/home_controller.dart';
 import 'package:chat_app/models/service_order.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
@@ -14,24 +15,37 @@ class ReportsListScreen extends ConsumerStatefulWidget {
   ConsumerState<ReportsListScreen> createState() => _ReportsListScreenState();
 }
 
-class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
+class _ReportsListScreenState extends ConsumerState<ReportsListScreen>
+    with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // Silently refresh when app comes back to foreground
+      ref.read(reportsPaginationProvider.notifier).silentRefresh();
+    }
   }
 
   @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       ref.read(reportsPaginationProvider.notifier).loadMore();
     }
   }
@@ -42,6 +56,15 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
     final paginationState = ref.watch(reportsPaginationProvider);
     final dateFilter = ref.watch(reportDateFilterProvider);
     final statusFilter = ref.watch(reportStatusFilterProvider);
+
+    // Listen for navigation changes and refresh when Reports tab is selected
+    ref.listen<int>(navIndexProvider, (previous, current) {
+      // Index 3 is the Reports tab
+      if (current == 3 && previous != 3) {
+        // Silently refresh the reports list when switching to this tab
+        ref.read(reportsPaginationProvider.notifier).silentRefresh();
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -67,7 +90,8 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
                     Chip(
                       label: Text('Date: ${_formatFilter(dateFilter)}'),
                       onDeleted: () {
-                        ref.read(reportDateFilterProvider.notifier).state = 'all';
+                        ref.read(reportDateFilterProvider.notifier).state =
+                            'all';
                         ref.read(reportsPaginationProvider.notifier).refresh();
                       },
                     ),
@@ -75,7 +99,8 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
                     Chip(
                       label: Text('Status: ${_formatFilter(statusFilter)}'),
                       onDeleted: () {
-                        ref.read(reportStatusFilterProvider.notifier).state = 'all';
+                        ref.read(reportStatusFilterProvider.notifier).state =
+                            'all';
                         ref.read(reportsPaginationProvider.notifier).refresh();
                       },
                     ),
@@ -90,13 +115,16 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                        const Icon(Icons.error_outline,
+                            size: 48, color: AppColors.error),
                         const SizedBox(height: 16),
                         Text('Error: ${paginationState.error}'),
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: () {
-                            ref.read(reportsPaginationProvider.notifier).refresh();
+                            ref
+                                .read(reportsPaginationProvider.notifier)
+                                .refresh();
                           },
                           child: const Text('Retry'),
                         ),
@@ -111,7 +139,9 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
                             Icon(
                               Icons.description_outlined,
                               size: 64,
-                              color: isDark ? AppColors.gray600 : AppColors.gray400,
+                              color: isDark
+                                  ? AppColors.gray600
+                                  : AppColors.gray400,
                             ),
                             const SizedBox(height: 16),
                             Text(
@@ -119,7 +149,9 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? AppColors.white : AppColors.textPrimary,
+                                color: isDark
+                                    ? AppColors.white
+                                    : AppColors.textPrimary,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -128,7 +160,9 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
                                   ? 'Try adjusting your filters'
                                   : 'Create your first service order',
                               style: TextStyle(
-                                color: isDark ? AppColors.gray400 : AppColors.textSecondary,
+                                color: isDark
+                                    ? AppColors.gray400
+                                    : AppColors.textSecondary,
                               ),
                             ),
                           ],
@@ -136,12 +170,15 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
                       )
                     : RefreshIndicator(
                         onRefresh: () async {
-                          ref.read(reportsPaginationProvider.notifier).refresh();
+                          ref
+                              .read(reportsPaginationProvider.notifier)
+                              .refresh();
                         },
                         child: ListView.builder(
                           controller: _scrollController,
                           padding: const EdgeInsets.all(16),
-                          itemCount: paginationState.orders.length + (paginationState.hasMore ? 1 : 0),
+                          itemCount: paginationState.orders.length +
+                              (paginationState.hasMore ? 1 : 0),
                           itemBuilder: (context, index) {
                             if (index == paginationState.orders.length) {
                               return const Center(
@@ -166,8 +203,8 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
     );
   }
 
-
-  Widget _buildReportCard(BuildContext context, ServiceOrder order, bool isDark) {
+  Widget _buildReportCard(
+      BuildContext context, ServiceOrder order, bool isDark) {
     return GestureDetector(
       onTap: () {
         context.push('/report-detail', extra: order);
@@ -180,7 +217,8 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: isDark ? Colors.black26 : AppColors.gray300.withOpacity(0.3),
+              color:
+                  isDark ? Colors.black26 : AppColors.gray300.withOpacity(0.3),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -213,7 +251,8 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? AppColors.white : AppColors.textPrimary,
+                          color:
+                              isDark ? AppColors.white : AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -221,7 +260,9 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
                         'Order #${order.id.substring(0, 8)}',
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDark ? AppColors.gray400 : AppColors.textSecondary,
+                          color: isDark
+                              ? AppColors.gray400
+                              : AppColors.textSecondary,
                         ),
                       ),
                     ],
@@ -231,7 +272,7 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                        '₹${order.totalCost.toStringAsFixed(2)}',
+                      '₹${order.totalCost.toStringAsFixed(2)}',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -240,7 +281,8 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
                     ),
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: _getStatusColor(order.status).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -261,7 +303,10 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(Icons.calendar_today, size: 14, color: isDark ? AppColors.gray500 : AppColors.textSecondary),
+                Icon(Icons.calendar_today,
+                    size: 14,
+                    color:
+                        isDark ? AppColors.gray500 : AppColors.textSecondary),
                 const SizedBox(width: 4),
                 Text(
                   order.createdAt != null
@@ -273,7 +318,10 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                Icon(Icons.directions_car, size: 14, color: isDark ? AppColors.gray500 : AppColors.textSecondary),
+                Icon(Icons.directions_car,
+                    size: 14,
+                    color:
+                        isDark ? AppColors.gray500 : AppColors.textSecondary),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Consumer(
@@ -281,13 +329,15 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
                       final vehicleAsync = ref.watch(
                         vehicleStreamProvider(order.vehicleId),
                       );
-                      
+
                       return vehicleAsync.when(
                         data: (vehicle) => Text(
                           vehicle?.numberPlate ?? 'Unknown',
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark ? AppColors.gray400 : AppColors.textSecondary,
+                            color: isDark
+                                ? AppColors.gray400
+                                : AppColors.textSecondary,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -295,14 +345,18 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
                           'Loading...',
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark ? AppColors.gray400 : AppColors.textSecondary,
+                            color: isDark
+                                ? AppColors.gray400
+                                : AppColors.textSecondary,
                           ),
                         ),
                         error: (_, __) => Text(
                           'Unknown',
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark ? AppColors.gray400 : AppColors.textSecondary,
+                            color: isDark
+                                ? AppColors.gray400
+                                : AppColors.textSecondary,
                           ),
                         ),
                       );
@@ -350,15 +404,17 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
   }
 
   String _formatStatus(String status) {
-    return status.split('_').map((word) => 
-      word[0].toUpperCase() + word.substring(1)
-    ).join(' ');
+    return status
+        .split('_')
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
   }
 
   String _formatFilter(String filter) {
-    return filter.split('_').map((word) => 
-      word[0].toUpperCase() + word.substring(1)
-    ).join(' ');
+    return filter
+        .split('_')
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
   }
 
   void _showFilterDialog(BuildContext context, WidgetRef ref) {
@@ -371,7 +427,8 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Date Range', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Date Range',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -381,24 +438,33 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
                     selected: ref.read(reportDateFilterProvider) == filter,
                     onSelected: (selected) {
                       if (selected) {
-                        ref.read(reportDateFilterProvider.notifier).state = filter;
+                        ref.read(reportDateFilterProvider.notifier).state =
+                            filter;
                       }
                     },
                   );
                 }).toList(),
               ),
               const SizedBox(height: 16),
-              const Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text('Status',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                children: ['all', 'pending', 'in_progress', 'completed', 'delivered'].map((filter) {
+                children: [
+                  'all',
+                  'pending',
+                  'in_progress',
+                  'completed',
+                  'delivered'
+                ].map((filter) {
                   return FilterChip(
                     label: Text(_formatFilter(filter)),
                     selected: ref.read(reportStatusFilterProvider) == filter,
                     onSelected: (selected) {
                       if (selected) {
-                        ref.read(reportStatusFilterProvider.notifier).state = filter;
+                        ref.read(reportStatusFilterProvider.notifier).state =
+                            filter;
                       }
                     },
                   );
@@ -428,4 +494,3 @@ class _ReportsListScreenState extends ConsumerState<ReportsListScreen> {
     );
   }
 }
-

@@ -4,6 +4,7 @@ import 'package:chat_app/core/styles/app_colors.dart';
 import 'package:chat_app/feature/service_orders/presentation/controller/service_order_controller.dart';
 import 'package:chat_app/feature/customers/presentation/controller/customer_controller.dart';
 import 'package:chat_app/feature/vehicles/presentation/controller/vehicle_controller.dart';
+import 'package:chat_app/feature/home/presentation/controller/home_controller.dart';
 import 'package:chat_app/models/service_order.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
@@ -18,7 +19,7 @@ class ServiceOrdersListScreen extends ConsumerStatefulWidget {
 
 class _ServiceOrdersListScreenState
     extends ConsumerState<ServiceOrdersListScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   String? _expandedOrderId;
   final ScrollController _scrollController = ScrollController();
   late TabController _tabController;
@@ -30,6 +31,16 @@ class _ServiceOrdersListScreenState
     _scrollController.addListener(_onScroll);
     _tabController = TabController(length: 5, vsync: this);
     _tabController.addListener(_onTabChanged);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // Silently refresh when app comes back to foreground
+      ref.read(serviceOrdersPaginationProvider.notifier).silentRefresh();
+    }
   }
 
   @override
@@ -38,10 +49,13 @@ class _ServiceOrdersListScreenState
     _scrollController.dispose();
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   void _onTabChanged() {
+    if (!_tabController.indexIsChanging) return;
+    
     setState(() {
       switch (_tabController.index) {
         case 0:
@@ -62,7 +76,15 @@ class _ServiceOrdersListScreenState
       }
     });
     ref.read(orderStatusFilterProvider.notifier).state = _currentStatusFilter;
-    ref.read(serviceOrdersPaginationProvider.notifier).refresh();
+    
+    // Use silentRefresh for smooth tab switching
+    final currentState = ref.read(serviceOrdersPaginationProvider);
+    final notifier = ref.read(serviceOrdersPaginationProvider.notifier);
+    if (currentState.orders.isEmpty) {
+      notifier.refresh();
+    } else {
+      notifier.silentRefresh();
+    }
   }
 
   void _onScroll() {
@@ -76,6 +98,15 @@ class _ServiceOrdersListScreenState
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final paginationState = ref.watch(serviceOrdersPaginationProvider);
+
+    // Listen for navigation changes and refresh when Service Orders tab is selected
+    ref.listen<int>(navIndexProvider, (previous, current) {
+      // Index 2 is the Service Orders tab
+      if (current == 2 && previous != 2) {
+        // Silently refresh the orders list when switching to this tab
+        ref.read(serviceOrdersPaginationProvider.notifier).silentRefresh();
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(

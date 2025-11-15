@@ -201,6 +201,49 @@ class ServiceOrdersPaginationNotifier
     state = ServiceOrdersPaginationState();
     loadInitialData();
   }
+
+  Future<void> silentRefresh() async {
+    // Refresh without showing loading indicator if we already have data
+    try {
+      final orders = await _repository.getServiceOrdersPaginated(limit: 20);
+      final filteredOrders = _applyFilters(orders);
+
+      // Get last document if orders exist
+      DocumentSnapshot? lastDoc;
+      if (filteredOrders.isNotEmpty) {
+        lastDoc =
+            await _repository.getServiceOrderDocument(filteredOrders.last.id);
+      }
+
+      // Only update if data has changed
+      if (_hasOrdersChanged(state.orders, filteredOrders)) {
+        state = state.copyWith(
+          orders: filteredOrders,
+          hasMore: filteredOrders.length >= 20,
+          lastDocument: lastDoc,
+          error: null,
+        );
+      }
+    } catch (e) {
+      // Silently fail - keep existing data
+      state = state.copyWith(error: e.toString());
+    }
+  }
+
+  bool _hasOrdersChanged(
+      List<ServiceOrder> oldOrders, List<ServiceOrder> newOrders) {
+    if (oldOrders.length != newOrders.length) return true;
+
+    for (int i = 0; i < oldOrders.length; i++) {
+      if (oldOrders[i].id != newOrders[i].id ||
+          oldOrders[i].status != newOrders[i].status ||
+          oldOrders[i].totalCost != newOrders[i].totalCost) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 }
 
 // Controller Provider
@@ -227,6 +270,13 @@ final customerServiceOrdersStreamProvider =
     StreamProvider.family<List<ServiceOrder>, String>((ref, customerId) {
   final serviceOrderRepository = ref.watch(serviceOrderRepositoryProvider);
   return serviceOrderRepository.getServiceOrdersByCustomer(customerId);
+});
+
+// Stream Provider for single service order
+final serviceOrderStreamProvider =
+    StreamProvider.family<ServiceOrder?, String>((ref, orderId) {
+  final serviceOrderRepository = ref.watch(serviceOrderRepositoryProvider);
+  return serviceOrderRepository.getServiceOrderStream(orderId);
 });
 
 // Analytics Provider

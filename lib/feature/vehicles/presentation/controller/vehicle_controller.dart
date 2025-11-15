@@ -158,6 +158,51 @@ class VehiclesPaginationNotifier extends StateNotifier<VehiclesPaginationState> 
     state = VehiclesPaginationState();
     loadInitialData();
   }
+
+  Future<void> silentRefresh() async {
+    // Refresh without showing loading indicator if we already have data
+    try {
+      final vehicles = await _repository.searchVehiclesPaginated(
+        query: _searchQuery,
+        limit: 20,
+      );
+
+      final filteredVehicles = _applyStatusFilter(vehicles);
+      
+      // Get last document if vehicles exist
+      DocumentSnapshot? lastDoc;
+      if (filteredVehicles.isNotEmpty) {
+        lastDoc = await _repository.getVehicleDocument(filteredVehicles.last.id);
+      }
+
+      // Only update if data has changed
+      if (_hasVehiclesChanged(state.vehicles, filteredVehicles)) {
+        state = state.copyWith(
+          vehicles: filteredVehicles,
+          hasMore: filteredVehicles.length >= 20,
+          lastDocument: lastDoc,
+          error: null,
+        );
+      }
+    } catch (e) {
+      // Silently fail - keep existing data
+      state = state.copyWith(error: e.toString());
+    }
+  }
+
+  bool _hasVehiclesChanged(List<Vehicle> oldVehicles, List<Vehicle> newVehicles) {
+    if (oldVehicles.length != newVehicles.length) return true;
+    
+    for (int i = 0; i < oldVehicles.length; i++) {
+      if (oldVehicles[i].id != newVehicles[i].id ||
+          oldVehicles[i].serviceStatus != newVehicles[i].serviceStatus ||
+          oldVehicles[i].numberPlate != newVehicles[i].numberPlate) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
 }
 
 // Controller Provider

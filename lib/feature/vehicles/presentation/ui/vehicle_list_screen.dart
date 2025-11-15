@@ -5,6 +5,7 @@ import 'package:chat_app/core/widget/vehicle_card.dart';
 import 'package:chat_app/core/widget/empty_state.dart';
 import 'package:chat_app/models/vehicle.dart';
 import 'package:chat_app/feature/vehicles/presentation/controller/vehicle_controller.dart';
+import 'package:chat_app/feature/home/presentation/controller/home_controller.dart';
 import 'package:go_router/go_router.dart';
 
 class VehicleListScreen extends ConsumerStatefulWidget {
@@ -14,19 +15,30 @@ class VehicleListScreen extends ConsumerStatefulWidget {
   ConsumerState<VehicleListScreen> createState() => _VehicleListScreenState();
 }
 
-class _VehicleListScreenState extends ConsumerState<VehicleListScreen> {
+class _VehicleListScreenState extends ConsumerState<VehicleListScreen> with WidgetsBindingObserver {
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // Silently refresh when app comes back to foreground
+      ref.read(vehiclesPaginationProvider.notifier).silentRefresh();
+    }
   }
 
   @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -43,6 +55,15 @@ class _VehicleListScreenState extends ConsumerState<VehicleListScreen> {
     final searchQuery = ref.watch(vehicleSearchQueryProvider);
     final statusFilter = ref.watch(vehicleStatusFilterProvider);
     final paginationState = ref.watch(vehiclesPaginationProvider);
+
+    // Listen for navigation changes and refresh when Vehicles tab is selected
+    ref.listen<int>(navIndexProvider, (previous, current) {
+      // Index 1 is the Vehicles tab
+      if (current == 1 && previous != 1) {
+        // Silently refresh the vehicles list when switching to this tab
+        ref.read(vehiclesPaginationProvider.notifier).silentRefresh();
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(

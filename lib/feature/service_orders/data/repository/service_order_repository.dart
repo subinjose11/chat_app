@@ -235,6 +235,30 @@ class ServiceOrderRepository {
     }
   }
 
+  // Get single service order as stream
+  Stream<ServiceOrder?> getServiceOrderStream(String orderId) {
+    try {
+      return firestore
+          .collection('service_orders')
+          .doc(orderId)
+          .snapshots()
+          .map((doc) {
+        if (doc.exists) {
+          try {
+            return ServiceOrder.fromJson({...doc.data()!, 'id': doc.id});
+          } catch (e) {
+            log('Error parsing service order: $e');
+            return null;
+          }
+        }
+        return null;
+      });
+    } catch (e) {
+      log('Error getting service order stream: $e');
+      return Stream.value(null);
+    }
+  }
+
   // Update ServiceOrder
   Future<void> updateServiceOrder(
       BuildContext context, ServiceOrder serviceOrder) async {
