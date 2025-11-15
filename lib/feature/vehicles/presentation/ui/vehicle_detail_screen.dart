@@ -519,7 +519,7 @@ class _DeleteVehicleDialogState extends ConsumerState<_DeleteVehicleDialog> {
               const SizedBox(height: 8),
               Text(
                 widget.vehicle.numberPlate,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: AppColors.primaryBlue,
@@ -636,24 +636,42 @@ class VehicleDetailScreen extends ConsumerWidget {
             Container(
               width: double.infinity,
               height: 200,
+              margin: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.gray200,
-                image: currentVehicle.imageUrl != null
-                    ? DecorationImage(
-                        image: NetworkImage(currentVehicle.imageUrl!),
-                        fit: BoxFit.cover,
-                      )
-                    : null,
+                color: isDark ? AppColors.cardBackgroundDark : AppColors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? AppColors.gray700 : AppColors.gray200,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDark
+                        ? Colors.black.withOpacity(0.3)
+                        : AppColors.gray300.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: currentVehicle.imageUrl == null
-                  ? const Center(
-                      child: Icon(
-                        Icons.directions_car,
-                        size: 80,
-                        color: AppColors.gray500,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.asset(
+                  'assets/drawables/vehicle_info.webp',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: AppColors.gray200,
+                      child: const Center(
+                        child: Icon(
+                          Icons.directions_car,
+                          size: 64,
+                          color: AppColors.gray400,
+                        ),
                       ),
-                    )
-                  : null,
+                    );
+                  },
+                ),
+              ),
             ),
 
             // Vehicle Info Section

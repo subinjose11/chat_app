@@ -56,10 +56,11 @@ class VehicleCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // Get the latest service order for this vehicle
-    final serviceOrdersAsync = ref.watch(vehicleServiceOrdersStreamProvider(vehicle.id));
-    
+    final serviceOrdersAsync =
+        ref.watch(vehicleServiceOrdersStreamProvider(vehicle.id));
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -69,9 +70,8 @@ class VehicleCard extends ConsumerWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: isDark 
-                  ? Colors.black26 
-                  : AppColors.gray300.withOpacity(0.3),
+              color:
+                  isDark ? Colors.black26 : AppColors.gray300.withOpacity(0.3),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -86,22 +86,83 @@ class VehicleCard extends ConsumerWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: AppColors.gray200,
-                  borderRadius: BorderRadius.circular(12),
-                  image: vehicle.imageUrl != null
-                      ? DecorationImage(
-                          image: NetworkImage(vehicle.imageUrl!),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryBlue.withOpacity(0.2),
+                      blurRadius: 12,
+                      spreadRadius: 0,
+                      offset: const Offset(0, 4),
+                    ),
+                    BoxShadow(
+                      color: isDark
+                          ? Colors.black.withOpacity(0.3)
+                          : Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      spreadRadius: 0,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: vehicle.imageUrl == null
-                    ? const Icon(
-                        Icons.directions_car,
-                        size: 40,
-                        color: AppColors.gray500,
-                      )
-                    : null,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // Background gradient
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.primaryBlue.withOpacity(0.1),
+                              AppColors.primaryDark.withOpacity(0.1),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Image Asset
+                      Image.asset(
+                        'assets/drawables/vehicle_card.webp',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: AppColors.gray200,
+                            child: Icon(
+                              Icons.directions_car,
+                              size: 40,
+                              color: AppColors.gray400,
+                            ),
+                          );
+                        },
+                      ),
+                      // Subtle gradient overlay
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.1),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Border
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: AppColors.primaryBlue.withOpacity(0.3),
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(width: 16),
               // Vehicle Info
@@ -117,8 +178,8 @@ class VehicleCard extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: isDark 
-                                  ? AppColors.white 
+                              color: isDark
+                                  ? AppColors.white
                                   : AppColors.textPrimary,
                             ),
                           ),
@@ -127,12 +188,14 @@ class VehicleCard extends ConsumerWidget {
                         serviceOrdersAsync.when(
                           data: (orders) {
                             String status = 'active';
-                            
+
                             if (orders.isNotEmpty) {
                               // Try to find the most recent non-completed/delivered order
                               try {
                                 final activeOrder = orders.firstWhere(
-                                  (order) => order.status != 'completed' && order.status != 'delivered',
+                                  (order) =>
+                                      order.status != 'completed' &&
+                                      order.status != 'delivered',
                                 );
                                 status = activeOrder.status;
                               } catch (e) {
@@ -140,7 +203,7 @@ class VehicleCard extends ConsumerWidget {
                                 status = orders.first.status;
                               }
                             }
-                            
+
                             return Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
@@ -205,8 +268,8 @@ class VehicleCard extends ConsumerWidget {
                       '${vehicle.make} ${vehicle.model} (${vehicle.year})',
                       style: TextStyle(
                         fontSize: 14,
-                        color: isDark 
-                            ? AppColors.gray400 
+                        color: isDark
+                            ? AppColors.gray400
                             : AppColors.textSecondary,
                       ),
                     ),
@@ -220,8 +283,8 @@ class VehicleCard extends ConsumerWidget {
                               Icon(
                                 Icons.calendar_today,
                                 size: 14,
-                                color: isDark 
-                                    ? AppColors.gray500 
+                                color: isDark
+                                    ? AppColors.gray500
                                     : AppColors.textSecondary,
                               ),
                               const SizedBox(width: 4),
@@ -229,23 +292,23 @@ class VehicleCard extends ConsumerWidget {
                                 'No service history',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: isDark 
-                                      ? AppColors.gray500 
+                                  color: isDark
+                                      ? AppColors.gray500
                                       : AppColors.textSecondary,
                                 ),
                               ),
                             ],
                           );
                         }
-                        
+
                         final latestOrder = orders.first;
                         return Row(
                           children: [
                             Icon(
                               Icons.calendar_today,
                               size: 14,
-                              color: isDark 
-                                  ? AppColors.gray500 
+                              color: isDark
+                                  ? AppColors.gray500
                                   : AppColors.textSecondary,
                             ),
                             const SizedBox(width: 4),
@@ -255,8 +318,8 @@ class VehicleCard extends ConsumerWidget {
                                   : 'Recent service',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: isDark 
-                                    ? AppColors.gray500 
+                                color: isDark
+                                    ? AppColors.gray500
                                     : AppColors.textSecondary,
                               ),
                             ),
@@ -268,8 +331,8 @@ class VehicleCard extends ConsumerWidget {
                           Icon(
                             Icons.calendar_today,
                             size: 14,
-                            color: isDark 
-                                ? AppColors.gray500 
+                            color: isDark
+                                ? AppColors.gray500
                                 : AppColors.textSecondary,
                           ),
                           const SizedBox(width: 4),
@@ -277,8 +340,8 @@ class VehicleCard extends ConsumerWidget {
                             'Loading...',
                             style: TextStyle(
                               fontSize: 12,
-                              color: isDark 
-                                  ? AppColors.gray500 
+                              color: isDark
+                                  ? AppColors.gray500
                                   : AppColors.textSecondary,
                             ),
                           ),
@@ -289,8 +352,8 @@ class VehicleCard extends ConsumerWidget {
                           Icon(
                             Icons.calendar_today,
                             size: 14,
-                            color: isDark 
-                                ? AppColors.gray500 
+                            color: isDark
+                                ? AppColors.gray500
                                 : AppColors.textSecondary,
                           ),
                           const SizedBox(width: 4),
@@ -298,8 +361,8 @@ class VehicleCard extends ConsumerWidget {
                             'No service history',
                             style: TextStyle(
                               fontSize: 12,
-                              color: isDark 
-                                  ? AppColors.gray500 
+                              color: isDark
+                                  ? AppColors.gray500
                                   : AppColors.textSecondary,
                             ),
                           ),
@@ -321,4 +384,3 @@ class VehicleCard extends ConsumerWidget {
     );
   }
 }
-

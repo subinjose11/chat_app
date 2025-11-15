@@ -6,6 +6,7 @@ import 'package:chat_app/feature/home/presentation/controller/home_controller.da
 import 'package:chat_app/local/notification_history_repo.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -22,8 +23,8 @@ class DashboardScreen extends ConsumerWidget {
           children: [
             Image.asset(
               'assets/drawables/app_logo.png',
-              width: 56,
-              height: 56,
+              width: 64,
+              height: 64,
               fit: BoxFit.contain,
             ),
             const SizedBox(width: 12),
@@ -46,6 +47,46 @@ class DashboardScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              //Carousel
+              CarouselSlider(
+                items: [
+                  _buildCarouselCard(
+                    context,
+                    'assets/drawables/img_01.webp',
+                    isDark,
+                  ),
+                  _buildCarouselCard(
+                    context,
+                    'assets/drawables/img_02.webp',
+                    isDark,
+                  ),
+                  _buildCarouselCard(
+                    context,
+                    'assets/drawables/img_03.webp',
+                    isDark,
+                  ),
+                  _buildCarouselCard(
+                    context,
+                    'assets/drawables/img_04.webp',
+                    isDark,
+                  ),
+                  _buildCarouselCard(
+                    context,
+                    'assets/drawables/img_05.webp',
+                    isDark,
+                  ),
+                ],
+                options: CarouselOptions(
+                  autoPlay: true,
+                  aspectRatio: 16 / 9,
+                  enlargeCenterPage: true,
+                  viewportFraction: 1,
+                  autoPlayInterval: const Duration(seconds: 3),
+                  autoPlayAnimationDuration: const Duration(milliseconds: 800),
+                  autoPlayCurve: Curves.fastOutSlowIn,
+                ),
+              ),
+              const SizedBox(height: 16),
               // Summary Cards
               Text(
                 'Overview',
@@ -878,6 +919,55 @@ class DashboardScreen extends ConsumerWidget {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCarouselCard(
+    BuildContext context,
+    String imagePath,
+    bool isDark,
+  ) {
+    return Container(
+      width: double.infinity,
+      height: 180,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.cardBackgroundDark : AppColors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? AppColors.gray700 : AppColors.gray200,
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withOpacity(0.4)
+                : AppColors.gray300.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Image.asset(
+          imagePath,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              color: AppColors.gray200,
+              child: const Center(
+                child: Icon(
+                  Icons.image_not_supported,
+                  size: 48,
+                  color: AppColors.gray400,
+                ),
+              ),
+            );
+          },
         ),
       ),
     );

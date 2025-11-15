@@ -7,6 +7,7 @@ import 'package:chat_app/feature/auth/data/model/user_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -184,6 +185,18 @@ class AuthRepository {
           context.go('/home');
         }
       }
+    } on PlatformException catch (e) {
+      String message = 'Google Sign-In failed';
+      if (e.code == 'network_error' || e.code == '7') {
+        message = 'Network error. Please check:\n'
+            '1. Your internet connection\n'
+            '2. SHA-1/SHA-256 fingerprints are added in Firebase Console\n'
+            '3. OAuth client is configured in Google Cloud Console';
+      } else {
+        message = e.message ?? 'Google Sign-In failed: ${e.code}';
+      }
+      log('Google Sign-In PlatformException: ${e.code} - ${e.message}');
+      showSnackBar(content: message, context: context);
     } on FirebaseAuthException catch (e) {
       String message = 'Google Sign-In failed';
       switch (e.code) {
@@ -203,8 +216,17 @@ class AuthRepository {
       showSnackBar(content: message, context: context);
     } catch (e) {
       log('Unexpected Google Sign-In error: $e');
-      showSnackBar(
-          content: 'Google Sign-In failed: ${e.toString()}', context: context);
+      String errorMessage = 'Google Sign-In failed';
+      if (e.toString().contains('network_error') || 
+          e.toString().contains('ApiException: 7')) {
+        errorMessage = 'Network error. Please ensure:\n'
+            '• Internet connection is active\n'
+            '• SHA-1/SHA-256 fingerprints are added in Firebase\n'
+            '• OAuth client is properly configured';
+      } else {
+        errorMessage = 'Google Sign-In failed: ${e.toString()}';
+      }
+      showSnackBar(content: errorMessage, context: context);
     }
   }
 

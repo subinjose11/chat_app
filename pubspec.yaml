@@ -30,6 +30,9 @@ dependencies:
 
   # Charts & Analytics
   fl_chart: ^0.69.0
+  
+  # Carousel
+  carousel_slider: ^5.0.0
 
   # Notifications
   firebase_messaging: ^15.1.5
