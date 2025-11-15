@@ -12,8 +12,8 @@ class CustomerController {
     await customerRepository.createCustomer(context, customer);
   }
 
-  void updateCustomer(BuildContext context, Customer customer) {
-    customerRepository.updateCustomer(context, customer);
+  Future<void> updateCustomer(BuildContext context, Customer customer) async {
+    await customerRepository.updateCustomer(context, customer);
   }
 
   void deleteCustomer(BuildContext context, String customerId) {

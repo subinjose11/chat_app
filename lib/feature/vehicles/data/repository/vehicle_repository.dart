@@ -228,10 +228,13 @@ class VehicleRepository {
   // Update Vehicle
   Future<void> updateVehicle(BuildContext context, Vehicle vehicle) async {
     try {
+      final updateData = vehicle.toJson();
+      // Remove id from update data as it's the document ID and shouldn't be updated
+      updateData.remove('id');
       await firestore
           .collection('vehicles')
           .doc(vehicle.id)
-          .update(vehicle.toJson());
+          .update(updateData);
 
       if (context.mounted) {
         showSnackBar(

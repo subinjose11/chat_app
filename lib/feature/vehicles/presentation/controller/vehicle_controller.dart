@@ -13,8 +13,8 @@ class VehicleController {
     await vehicleRepository.createVehicle(context, vehicle);
   }
 
-  void updateVehicle(BuildContext context, Vehicle vehicle) {
-    vehicleRepository.updateVehicle(context, vehicle);
+  Future<void> updateVehicle(BuildContext context, Vehicle vehicle) async {
+    await vehicleRepository.updateVehicle(context, vehicle);
   }
 
   Future<void> deleteVehicle(BuildContext context, String vehicleId) async {

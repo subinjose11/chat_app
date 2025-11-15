@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chat_app/core/styles/app_colors.dart';
 import 'package:chat_app/models/vehicle.dart';
@@ -9,11 +10,13 @@ import 'package:chat_app/feature/vehicles/presentation/controller/vehicle_contro
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 
-void _showEditDialog(BuildContext context, WidgetRef ref, Vehicle vehicle) {
-  showDialog(
+Future<void> _showEditDialog(
+    BuildContext context, WidgetRef ref, Vehicle vehicle) async {
+  await showDialog<Vehicle>(
     context: context,
     builder: (context) => _EditVehicleDialog(vehicle: vehicle),
   );
+  // The dialog will handle the update, and the stream provider will automatically update the UI
 }
 
 class _EditVehicleDialog extends ConsumerStatefulWidget {
@@ -104,7 +107,7 @@ class _EditVehicleDialogState extends ConsumerState<_EditVehicleDialog> {
               ? null
               : _customerAddressController.text,
         );
-        ref
+        await ref
             .read(customerControllerProvider)
             .updateCustomer(context, updatedCustomer);
       }
@@ -124,7 +127,7 @@ class _EditVehicleDialogState extends ConsumerState<_EditVehicleDialog> {
       );
 
       // Call vehicle controller to update
-      ref
+      await ref
           .read(vehicleControllerProvider)
           .updateVehicle(context, updatedVehicle);
 
@@ -251,9 +254,22 @@ class _EditVehicleDialogState extends ConsumerState<_EditVehicleDialog> {
                     border: OutlineInputBorder(),
                   ),
                   textCapitalization: TextCapitalization.characters,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
+                    TextInputFormatter.withFunction(
+                      (oldValue, newValue) => TextEditingValue(
+                        text: newValue.text.toUpperCase(),
+                        selection: newValue.selection,
+                      ),
+                    ),
+                  ],
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter number plate';
+                      return 'Please enter vehicle number';
+                    }
+                    // Validate that it contains only uppercase letters and numbers
+                    if (!RegExp(r'^[A-Z0-9]+$').hasMatch(value)) {
+                      return 'Only uppercase letters and numbers are allowed';
                     }
                     return null;
                   },
@@ -362,26 +378,6 @@ class _EditVehicleDialogState extends ConsumerState<_EditVehicleDialog> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // Mileage (Optional)
-                TextFormField(
-                  controller: _mileageController,
-                  decoration: const InputDecoration(
-                    labelText: 'Mileage (km) (Optional)',
-                    prefixIcon: Icon(Icons.speed),
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value != null && value.isNotEmpty) {
-                      final mileage = int.tryParse(value);
-                      if (mileage == null || mileage < 0) {
-                        return 'Please enter a valid mileage';
-                      }
-                    }
-                    return null;
-                  },
-                ),
               ],
             ),
           ),
@@ -596,24 +592,34 @@ class VehicleDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Watch vehicle stream for real-time updates
+    final vehicleAsync = ref.watch(vehicleStreamProvider(vehicle.id));
+
+    // Use the latest vehicle from stream, or fall back to the passed vehicle
+    final currentVehicle = vehicleAsync.when(
+      data: (streamVehicle) => streamVehicle ?? vehicle,
+      loading: () => vehicle,
+      error: (_, __) => vehicle,
+    );
+
     // Fetch actual service orders from Firebase
     final serviceOrdersAsync =
-        ref.watch(vehicleServiceOrdersStreamProvider(vehicle.id));
+        ref.watch(vehicleServiceOrdersStreamProvider(currentVehicle.id));
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(vehicle.numberPlate),
+        title: Text(currentVehicle.numberPlate),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
             onPressed: () {
-              _showEditDialog(context, ref, vehicle);
+              _showEditDialog(context, ref, currentVehicle);
             },
           ),
           IconButton(
             icon: const Icon(Icons.delete),
             onPressed: () {
-              _showDeleteConfirmation(context, ref, vehicle);
+              _showDeleteConfirmation(context, ref, currentVehicle);
             },
           ),
           const SizedBox(width: 8),
@@ -629,14 +635,14 @@ class VehicleDetailScreen extends ConsumerWidget {
               height: 200,
               decoration: BoxDecoration(
                 color: AppColors.gray200,
-                image: vehicle.imageUrl != null
+                image: currentVehicle.imageUrl != null
                     ? DecorationImage(
-                        image: NetworkImage(vehicle.imageUrl!),
+                        image: NetworkImage(currentVehicle.imageUrl!),
                         fit: BoxFit.cover,
                       )
                     : null,
               ),
-              child: vehicle.imageUrl == null
+              child: currentVehicle.imageUrl == null
                   ? const Center(
                       child: Icon(
                         Icons.directions_car,
@@ -657,7 +663,7 @@ class VehicleDetailScreen extends ConsumerWidget {
                   Consumer(
                     builder: (context, ref, child) {
                       final customerAsync = ref.watch(
-                        customerStreamProvider(vehicle.customerId),
+                        customerStreamProvider(currentVehicle.customerId),
                       );
 
                       return customerAsync.when(
@@ -668,7 +674,7 @@ class VehicleDetailScreen extends ConsumerWidget {
                               'Customer Information',
                               [
                                 _buildInfoRow(Icons.person, 'Customer ID',
-                                    vehicle.customerId),
+                                    currentVehicle.customerId),
                               ],
                             );
                           }
@@ -703,7 +709,7 @@ class VehicleDetailScreen extends ConsumerWidget {
                           'Customer Information',
                           [
                             _buildInfoRow(Icons.person, 'Customer ID',
-                                vehicle.customerId),
+                                currentVehicle.customerId),
                           ],
                         ),
                       );
@@ -717,20 +723,23 @@ class VehicleDetailScreen extends ConsumerWidget {
                     'Vehicle Specifications',
                     [
                       _buildInfoRow(Icons.confirmation_number, 'Number Plate',
-                          vehicle.numberPlate),
+                          currentVehicle.numberPlate),
                       _buildInfoRow(Icons.directions_car, 'Make & Model',
-                          '${vehicle.make} ${vehicle.model}'),
-                      _buildInfoRow(Icons.calendar_today, 'Year', vehicle.year),
-                      if (vehicle.fuelType != null)
+                          '${currentVehicle.make} ${currentVehicle.model}'),
+                      _buildInfoRow(
+                          Icons.calendar_today, 'Year', currentVehicle.year),
+                      if (currentVehicle.fuelType != null)
                         _buildInfoRow(Icons.local_gas_station, 'Fuel Type',
-                            vehicle.fuelType!),
-                      if (vehicle.vin != null)
-                        _buildInfoRow(Icons.numbers, 'VIN', vehicle.vin!),
-                      if (vehicle.color != null)
-                        _buildInfoRow(Icons.palette, 'Color', vehicle.color!),
-                      if (vehicle.mileage != null)
+                            currentVehicle.fuelType!),
+                      if (currentVehicle.vin != null)
                         _buildInfoRow(
-                            Icons.speed, 'Mileage', '${vehicle.mileage} km'),
+                            Icons.numbers, 'VIN', currentVehicle.vin!),
+                      if (currentVehicle.color != null)
+                        _buildInfoRow(
+                            Icons.palette, 'Color', currentVehicle.color!),
+                      if (currentVehicle.mileage != null)
+                        _buildInfoRow(Icons.speed, 'Mileage',
+                            '${currentVehicle.mileage} km'),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -757,7 +766,7 @@ class VehicleDetailScreen extends ConsumerWidget {
                             onPressed: () {
                               // Navigate to vehicle service history screen
                               context.push('/vehicle-service-history',
-                                  extra: vehicle);
+                                  extra: currentVehicle);
                             },
                             icon: const Icon(Icons.history, size: 18),
                             label: const Text('View All'),
@@ -812,8 +821,8 @@ class VehicleDetailScreen extends ConsumerWidget {
                           final service = last5Orders[index];
                           return Container(
                             key: ValueKey('service_order_${service.id}'),
-                            child: _buildTimelineItem(
-                                isDark, service, index, context),
+                            child: _buildTimelineItem(isDark, service, index,
+                                context, currentVehicle),
                           );
                         },
                       );
@@ -885,7 +894,7 @@ class VehicleDetailScreen extends ConsumerWidget {
         ),
         child: ElevatedButton.icon(
           onPressed: () {
-            context.push('/service-order', extra: vehicle);
+            context.push('/service-order', extra: currentVehicle);
           },
           icon: const Icon(Icons.add),
           label: const Text('Add New Service'),
@@ -972,6 +981,7 @@ class VehicleDetailScreen extends ConsumerWidget {
     ServiceOrder service,
     int index,
     BuildContext context,
+    Vehicle vehicle,
   ) {
     return IntrinsicHeight(
       child: Row(

@@ -108,7 +108,10 @@ class CustomerRepository {
   // Update Customer
   Future<void> updateCustomer(BuildContext context, Customer customer) async {
     try {
-      await firestore.collection('customers').doc(customer.id).update(customer.toJson());
+      final updateData = customer.toJson();
+      // Remove id from update data as it's the document ID and shouldn't be updated
+      updateData.remove('id');
+      await firestore.collection('customers').doc(customer.id).update(updateData);
       
       if (context.mounted) {
         showSnackBar(content: 'Customer updated successfully!', context: context);
