@@ -9,9 +9,7 @@ import 'package:chat_app/models/part_item.dart';
 import 'package:chat_app/feature/service_orders/presentation/controller/service_order_controller.dart';
 import 'package:chat_app/feature/vehicles/presentation/controller/vehicle_controller.dart';
 import 'package:chat_app/feature/customers/presentation/controller/customer_controller.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:io';
 
 class ServiceOrderScreen extends ConsumerStatefulWidget {
   final Vehicle? vehicle;
@@ -33,7 +31,6 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
   // Order fields
   final _descriptionController = TextEditingController();
   final _partsUsedController = TextEditingController();
-  final _laborCostController = TextEditingController();
   final _partsCostController = TextEditingController();
   final _notesController = TextEditingController();
 
@@ -41,6 +38,12 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
   List<PartItem> _parts = [];
   final _partNameController = TextEditingController();
   final _partCostController = TextEditingController();
+  final _partQuantityController = TextEditingController();
+
+  // Labor breakdown
+  List<PartItem> _laborItems = [];
+  final _laborNameController = TextEditingController();
+  final _laborItemCostController = TextEditingController();
 
   // Vehicle & Customer fields
   final _customerNameController = TextEditingController();
@@ -51,14 +54,11 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
   final _vehicleModelController = TextEditingController();
   final _vehicleYearController = TextEditingController();
 
-  final ImagePicker _picker = ImagePicker();
-
   // Dropdown values
   String? _selectedServiceType;
   final _customServiceTypeController = TextEditingController();
   String _selectedWorkStatus = 'pending';
   String _selectedFuelType = 'Petrol';
-  DateTime _selectedDate = DateTime.now();
 
   // Track if editing existing order
   String? _existingVehicleId;
@@ -102,9 +102,8 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
       final order = widget.existingOrder!;
       _existingVehicleId = order.vehicleId;
       _existingCustomerId = order.customerId;
-      _descriptionController.text = order.description ?? '';
+      _descriptionController.text = order.description;
       _partsUsedController.text = order.partsUsed.join(', ');
-      _laborCostController.text = order.laborCost.toString();
       _partsCostController.text = order.partsCost.toString();
       _notesController.text = order.notes ?? '';
 
@@ -121,10 +120,23 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
       }
 
       _selectedWorkStatus = order.status;
-      _selectedDate = order.createdAt ?? DateTime.now();
 
       // Load parts breakdown
       _parts = List<PartItem>.from(order.parts);
+
+      // Load labor breakdown
+      if (order.laborItems.isNotEmpty) {
+        // Load from new laborItems field
+        _laborItems = List<PartItem>.from(order.laborItems);
+      } else if (order.laborCost > 0) {
+        // Backward compatibility: create a single labor item from old laborCost field
+        _laborItems = [
+          PartItem(
+            name: 'Labor Cost',
+            cost: order.laborCost,
+          ),
+        ];
+      }
 
       // Load vehicle and customer details for editing
       _loadExistingData();
@@ -146,13 +158,18 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
   }
 
   double get _totalCost {
-    final labor = double.tryParse(_laborCostController.text) ?? 0;
-    final parts = _parts.fold<double>(0, (sum, part) => sum + part.cost);
+    final labor = _totalLaborCost;
+    final parts = _totalPartsCost;
     return labor + parts;
   }
 
   double get _totalPartsCost {
-    return _parts.fold<double>(0, (sum, part) => sum + part.cost);
+    return _parts.fold<double>(
+        0, (sum, part) => sum + (part.cost * part.quantity));
+  }
+
+  double get _totalLaborCost {
+    return _laborItems.fold<double>(0, (sum, item) => sum + item.cost);
   }
 
   void _addPart() {
@@ -171,13 +188,23 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
       return;
     }
 
+    final quantity = int.tryParse(_partQuantityController.text) ?? 1;
+    if (quantity < 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid quantity')),
+      );
+      return;
+    }
+
     setState(() {
       _parts.add(PartItem(
         name: _partNameController.text,
         cost: cost,
+        quantity: quantity,
       ));
       _partNameController.clear();
       _partCostController.clear();
+      _partQuantityController.clear();
     });
   }
 
@@ -187,49 +214,37 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
     });
   }
 
-  Future<void> _pickImage(bool isBefore) async {
-    try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1920,
-        maxHeight: 1080,
-        imageQuality: 85,
+  void _addLabor() {
+    if (_laborNameController.text.isEmpty ||
+        _laborItemCostController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter labor name and cost')),
       );
-
-      if (image != null) {
-        if (isBefore) {
-          final currentPhotos = ref.read(beforePhotosProvider);
-          ref.read(beforePhotosProvider.notifier).state = [
-            ...currentPhotos,
-            image
-          ];
-        } else {
-          final currentPhotos = ref.read(afterPhotosProvider);
-          ref.read(afterPhotosProvider.notifier).state = [
-            ...currentPhotos,
-            image
-          ];
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking image: $e')),
-        );
-      }
+      return;
     }
+
+    final cost = double.tryParse(_laborItemCostController.text);
+    if (cost == null || cost < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid cost')),
+      );
+      return;
+    }
+
+    setState(() {
+      _laborItems.add(PartItem(
+        name: _laborNameController.text,
+        cost: cost,
+      ));
+      _laborNameController.clear();
+      _laborItemCostController.clear();
+    });
   }
 
-  void _removePhoto(int index, bool isBefore) {
-    if (isBefore) {
-      final currentPhotos = ref.read(beforePhotosProvider);
-      final updatedPhotos = List<XFile>.from(currentPhotos)..removeAt(index);
-      ref.read(beforePhotosProvider.notifier).state = updatedPhotos;
-    } else {
-      final currentPhotos = ref.read(afterPhotosProvider);
-      final updatedPhotos = List<XFile>.from(currentPhotos)..removeAt(index);
-      ref.read(afterPhotosProvider.notifier).state = updatedPhotos;
-    }
+  void _removeLabor(int index) {
+    setState(() {
+      _laborItems.removeAt(index);
+    });
   }
 
   Future<void> _submitOrder() async {
@@ -305,7 +320,8 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
               .map((p) => p.name)
               .toList(), // Keep for backward compatibility
           parts: _parts, // New: parts with individual costs
-          laborCost: double.tryParse(_laborCostController.text) ?? 0.0,
+          laborCost: _totalLaborCost, // Keep for backward compatibility
+          laborItems: _laborItems, // New: labor items with individual costs
           partsCost: _totalPartsCost,
           totalCost: _totalCost,
           vehicleId: vehicleId,
@@ -314,9 +330,6 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
           createdAt: widget.existingOrder?.createdAt ?? DateTime.now(),
           notes: _notesController.text,
         );
-
-        final beforePhotos = ref.read(beforePhotosProvider);
-        final afterPhotos = ref.read(afterPhotosProvider);
 
         if (widget.existingOrder != null) {
           // Update existing order
@@ -327,22 +340,22 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
         } else {
           // Create new order
           ref.read(serviceOrderControllerProvider).createServiceOrder(
-                context,
-                serviceOrder,
-                beforePhotos,
-                afterPhotos,
-              );
+            context,
+            serviceOrder,
+            [],
+            [],
+          );
         }
-
-        // Clear the form and photos
-        ref.read(beforePhotosProvider.notifier).state = [];
-        ref.read(afterPhotosProvider.notifier).state = [];
 
         if (mounted) {
           // Close loading dialog
           Navigator.pop(context);
           // Go back to orders tab
           context.go('/home?index=2');
+        }
+        // Refresh the list when returning from create screen
+        if (mounted) {
+          ref.read(serviceOrdersPaginationProvider.notifier).refresh();
         }
       } catch (e) {
         if (mounted) {
@@ -362,8 +375,6 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final beforePhotos = ref.watch(beforePhotosProvider);
-    final afterPhotos = ref.watch(afterPhotosProvider);
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.gray900 : AppColors.gray50,
@@ -923,73 +934,239 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                                       : AppColors.textPrimary,
                                 ),
                               ),
+                              const Spacer(),
+                              if (_laborItems.isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        AppColors.primaryBlue.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    '₹${_totalLaborCost.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primaryBlue,
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            controller: _laborCostController,
-                            decoration: InputDecoration(
-                              hintText: 'Enter labor cost',
-                              prefixText: '₹ ',
-                              prefixStyle: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                          const SizedBox(height: 16),
+
+                          // Labor Items List
+                          if (_laborItems.isNotEmpty) ...[
+                            Container(
+                              decoration: BoxDecoration(
                                 color: isDark
-                                    ? AppColors.white
-                                    : AppColors.textPrimary,
-                              ),
-                              filled: true,
-                              fillColor:
-                                  isDark ? AppColors.gray800 : AppColors.white,
-                              border: OutlineInputBorder(
+                                    ? AppColors.gray900.withOpacity(0.5)
+                                    : AppColors.gray50,
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
+                              ),
+                              child: ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: _laborItems.length,
+                                padding: EdgeInsets.zero,
+                                separatorBuilder: (context, index) => Divider(
+                                  height: 1,
+                                  indent: 16,
+                                  endIndent: 16,
                                   color: isDark
-                                      ? AppColors.gray600
+                                      ? AppColors.gray700
                                       : AppColors.gray300,
                                 ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: isDark
-                                      ? AppColors.gray600
-                                      : AppColors.gray300,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: AppColors.primaryBlue,
-                                  width: 2,
-                                ),
+                                itemBuilder: (context, index) {
+                                  final labor = _laborItems[index];
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primaryBlue
+                                                .withOpacity(0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(6),
+                                          ),
+                                          child: const Icon(
+                                            Icons.handyman,
+                                            size: 16,
+                                            color: AppColors.primaryBlue,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            labor.name,
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w500,
+                                              color: isDark
+                                                  ? AppColors.white
+                                                  : AppColors.textPrimary,
+                                            ),
+                                          ),
+                                        ),
+                                        Text(
+                                          '₹${labor.cost.toStringAsFixed(2)}',
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                            color: isDark
+                                                ? AppColors.white
+                                                : AppColors.textPrimary,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            onTap: () => _removeLabor(index),
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                            child: Container(
+                                              padding: const EdgeInsets.all(6),
+                                              child: const Icon(
+                                                Icons.close,
+                                                size: 18,
+                                                color: AppColors.error,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
                             ),
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
+                            const SizedBox(height: 12),
+                          ],
+
+                          // Add Labor Form
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
                               color: isDark
-                                  ? AppColors.white
-                                  : AppColors.textPrimary,
+                                  ? AppColors.gray700.withOpacity(0.3)
+                                  : AppColors.primaryBlue.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isDark
+                                    ? AppColors.gray600
+                                    : AppColors.primaryBlue.withOpacity(0.2),
+                                width: 2,
+                              ),
                             ),
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                  RegExp(r'^\d*\.?\d{0,2}')),
-                            ],
-                            onChanged: (value) {
-                              setState(() {}); // Update total
-                            },
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Labor cost is required';
-                              }
-                              if (double.tryParse(value) == null) {
-                                return 'Enter a valid amount';
-                              }
-                              return null;
-                            },
+                            child: Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 1,
+                                      child: TextFormField(
+                                        controller: _laborNameController,
+                                        decoration: InputDecoration(
+                                          labelText: 'Labor Type',
+                                          hintText: 'e.g., Engine Repair',
+                                          prefixIcon: const Icon(
+                                            Icons.handyman,
+                                            size: 20,
+                                          ),
+                                          isDense: true,
+                                          filled: true,
+                                          fillColor: isDark
+                                              ? AppColors.gray800
+                                              : AppColors.white,
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 12,
+                                          ),
+                                          border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _laborItemCostController,
+                                        decoration: InputDecoration(
+                                          hintText: '0.00',
+                                          prefixIcon: const Icon(
+                                            Icons.currency_rupee,
+                                            size: 20,
+                                          ),
+                                          filled: true,
+                                          fillColor: isDark
+                                              ? AppColors.gray800
+                                              : AppColors.white,
+                                          border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: BorderSide(
+                                              color: isDark
+                                                  ? AppColors.gray600
+                                                  : AppColors.gray300,
+                                            ),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: const BorderSide(
+                                              color: AppColors.primaryBlue,
+                                              width: 2,
+                                            ),
+                                          ),
+                                        ),
+                                        keyboardType: const TextInputType
+                                            .numberWithOptions(decimal: true),
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter.allow(
+                                              RegExp(r'^\d*\.?\d{0,2}')),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    onPressed: _addLabor,
+                                    icon: const Icon(Icons.add, size: 20),
+                                    label: const Text('Add Labor'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primaryBlue,
+                                      foregroundColor: AppColors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -1104,19 +1281,35 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(
-                                          child: Text(
-                                            part.name,
-                                            style: TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w500,
-                                              color: isDark
-                                                  ? AppColors.white
-                                                  : AppColors.textPrimary,
-                                            ),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                part.name,
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: isDark
+                                                      ? AppColors.white
+                                                      : AppColors.textPrimary,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                'Qty: ${part.quantity}',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: isDark
+                                                      ? AppColors.gray400
+                                                      : AppColors.gray600,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                         Text(
-                                          '₹${part.cost.toStringAsFixed(2)}',
+                                          '₹${(part.cost * part.quantity).toStringAsFixed(2)}',
                                           style: TextStyle(
                                             fontSize: 15,
                                             fontWeight: FontWeight.w600,
@@ -1153,72 +1346,169 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
 
                           // Add Part Form
                           Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: isDark
-                                  ? AppColors.gray700.withOpacity(0.3)
-                                  : AppColors.primaryBlue.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(12),
+                                  ? AppColors.gray800.withOpacity(0.5)
+                                  : AppColors.gray50,
+                              borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: isDark
-                                    ? AppColors.gray600
-                                    : AppColors.primaryBlue.withOpacity(0.2),
-                                width: 2,
+                                    ? AppColors.gray700
+                                    : AppColors.gray300,
+                                width: 1.5,
                               ),
                             ),
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                // Header
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primaryBlue
+                                            .withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(
+                                        Icons.add_circle_outline,
+                                        color: AppColors.primaryBlue,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      'Add New Part',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark
+                                            ? AppColors.white
+                                            : AppColors.textPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+
+                                // Part Name - Full Width
+                                TextFormField(
+                                  controller: _partNameController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Part Name',
+                                    hintText: 'e.g., Oil Filter',
+                                    prefixIcon: const Icon(
+                                      Icons.inventory_2_outlined,
+                                      size: 20,
+                                    ),
+                                    filled: true,
+                                    fillColor: isDark
+                                        ? AppColors.gray800
+                                        : AppColors.white,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: isDark
+                                            ? AppColors.gray600
+                                            : AppColors.gray300,
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: const BorderSide(
+                                        color: AppColors.primaryBlue,
+                                        width: 2,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+
+                                // Quantity and Cost in Row
                                 Row(
                                   children: [
                                     Expanded(
-                                      flex: 2,
                                       child: TextFormField(
-                                        controller: _partNameController,
+                                        controller: _partQuantityController,
                                         decoration: InputDecoration(
-                                          labelText: 'Part Name',
-                                          hintText: 'e.g., Oil Filter',
+                                          labelText: 'Quantity',
+                                          hintText: '1',
                                           prefixIcon: const Icon(
-                                            Icons.label_outline,
+                                            Icons.numbers,
                                             size: 20,
                                           ),
-                                          isDense: true,
                                           filled: true,
                                           fillColor: isDark
                                               ? AppColors.gray800
                                               : AppColors.white,
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 12,
-                                          ),
                                           border: OutlineInputBorder(
                                             borderRadius:
-                                                BorderRadius.circular(10),
+                                                BorderRadius.circular(12),
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: BorderSide(
+                                              color: isDark
+                                                  ? AppColors.gray600
+                                                  : AppColors.gray300,
+                                            ),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: const BorderSide(
+                                              color: AppColors.primaryBlue,
+                                              width: 2,
+                                            ),
                                           ),
                                         ),
+                                        keyboardType: TextInputType.number,
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter
+                                              .digitsOnly,
+                                        ],
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
+                                    const SizedBox(width: 12),
                                     Expanded(
                                       child: TextFormField(
                                         controller: _partCostController,
                                         decoration: InputDecoration(
-                                          labelText: 'Cost',
                                           hintText: '0.00',
-                                          prefixText: '₹ ',
-                                          isDense: true,
+                                          prefixIcon: const Icon(
+                                            Icons.currency_rupee,
+                                            size: 20,
+                                          ),
                                           filled: true,
                                           fillColor: isDark
                                               ? AppColors.gray800
                                               : AppColors.white,
-                                          contentPadding:
-                                              const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 12,
-                                          ),
                                           border: OutlineInputBorder(
                                             borderRadius:
-                                                BorderRadius.circular(10),
+                                                BorderRadius.circular(12),
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: BorderSide(
+                                              color: isDark
+                                                  ? AppColors.gray600
+                                                  : AppColors.gray300,
+                                            ),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: const BorderSide(
+                                              color: AppColors.primaryBlue,
+                                              width: 2,
+                                            ),
                                           ),
                                         ),
                                         keyboardType: const TextInputType
@@ -1231,22 +1521,36 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 8),
+                                const SizedBox(height: 16),
+
+                                // Add Button
                                 SizedBox(
                                   width: double.infinity,
-                                  child: ElevatedButton.icon(
+                                  height: 48,
+                                  child: ElevatedButton(
                                     onPressed: _addPart,
-                                    icon: const Icon(Icons.add, size: 20),
-                                    label: const Text('Add Part'),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: AppColors.primaryBlue,
                                       foregroundColor: AppColors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 12,
-                                      ),
+                                      elevation: 0,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
+                                    ),
+                                    child: const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.add, size: 22),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Add Part',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
@@ -1291,7 +1595,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Labor',
+                                    'Labor (${_laborItems.length})',
                                     style: TextStyle(
                                       fontSize: 15,
                                       color: isDark
@@ -1302,7 +1606,7 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                                 ],
                               ),
                               Text(
-                                '₹${(double.tryParse(_laborCostController.text) ?? 0).toStringAsFixed(2)}',
+                                '₹${_totalLaborCost.toStringAsFixed(2)}',
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
@@ -1413,148 +1717,6 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-
-              // Photos Section
-              _buildSectionHeader(
-                'Service Photos',
-                Icons.photo_camera,
-                isDark,
-              ),
-              const SizedBox(height: 16),
-
-              // Photos Container
-              Container(
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.gray800 : AppColors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark ? AppColors.gray700 : AppColors.gray300,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (isDark ? Colors.black : Colors.grey)
-                          .withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Before Photos
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: AppColors.error.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Icon(
-                            Icons.photo_library,
-                            color: AppColors.error,
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Before Photos',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: isDark
-                                ? AppColors.white
-                                : AppColors.textPrimary,
-                          ),
-                        ),
-                        const Spacer(),
-                        if (beforePhotos.isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.error.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${beforePhotos.length}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.error,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _buildPhotoSection(beforePhotos, true, isDark),
-                    const SizedBox(height: 24),
-
-                    // Divider
-                    Divider(
-                      color: isDark ? AppColors.gray700 : AppColors.gray300,
-                    ),
-                    const SizedBox(height: 24),
-
-                    // After Photos
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: AppColors.success.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Icon(
-                            Icons.photo_library,
-                            color: AppColors.success,
-                            size: 18,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'After Photos',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: isDark
-                                ? AppColors.white
-                                : AppColors.textPrimary,
-                          ),
-                        ),
-                        const Spacer(),
-                        if (afterPhotos.isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.success.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${afterPhotos.length}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.success,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _buildPhotoSection(afterPhotos, false, isDark),
-                  ],
-                ),
-              ),
               const SizedBox(height: 32),
 
               // Action Buttons
@@ -1603,93 +1765,6 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildPhotoSection(List<XFile> photos, bool isBefore, bool isDark) {
-    return SizedBox(
-      height: 120,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          // Add Photo Button
-          GestureDetector(
-            onTap: () => _pickImage(isBefore),
-            child: Container(
-              width: 120,
-              margin: const EdgeInsets.only(right: 12),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.gray800 : AppColors.gray100,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isDark ? AppColors.gray700 : AppColors.gray300,
-                  width: 2,
-                  style: BorderStyle.solid,
-                ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.add_photo_alternate,
-                    size: 40,
-                    color: isDark ? AppColors.gray500 : AppColors.gray400,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Add Photo',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark ? AppColors.gray500 : AppColors.gray600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // Photos
-          ...photos.asMap().entries.map((entry) {
-            final index = entry.key;
-            final photo = entry.value;
-            return Container(
-              width: 120,
-              margin: const EdgeInsets.only(right: 12),
-              child: Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.file(
-                      File(photo.path),
-                      width: 120,
-                      height: 120,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  Positioned(
-                    top: 4,
-                    right: 4,
-                    child: GestureDetector(
-                      onTap: () => _removePhoto(index, isBefore),
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: AppColors.error,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.close,
-                          color: AppColors.white,
-                          size: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-        ],
       ),
     );
   }
@@ -1750,12 +1825,14 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
   void dispose() {
     _descriptionController.dispose();
     _partsUsedController.dispose();
-    _laborCostController.dispose();
     _partsCostController.dispose();
     _notesController.dispose();
     _customServiceTypeController.dispose();
     _partNameController.dispose();
     _partCostController.dispose();
+    _partQuantityController.dispose();
+    _laborNameController.dispose();
+    _laborItemCostController.dispose();
     _customerNameController.dispose();
     _customerPhoneController.dispose();
     _customerAddressController.dispose();

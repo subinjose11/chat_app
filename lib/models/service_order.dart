@@ -18,7 +18,10 @@ class ServiceOrder with _$ServiceOrder {
     @Default([])
     @PartItemListConverter()
     List<PartItem> parts, // New: parts with individual costs
-    @Default(0.0) double laborCost,
+    @Default(0.0) double laborCost, // Deprecated: kept for backward compatibility
+    @Default([])
+    @PartItemListConverter()
+    List<PartItem> laborItems, // New: labor items with individual costs
     @Default(0.0) double partsCost,
     @Default(0.0) double totalCost,
     @Default('pending')

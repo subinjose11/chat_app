@@ -12,28 +12,62 @@ class ServiceOrdersListScreen extends ConsumerStatefulWidget {
   const ServiceOrdersListScreen({super.key});
 
   @override
-  ConsumerState<ServiceOrdersListScreen> createState() => _ServiceOrdersListScreenState();
+  ConsumerState<ServiceOrdersListScreen> createState() =>
+      _ServiceOrdersListScreenState();
 }
 
-class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScreen> {
+class _ServiceOrdersListScreenState
+    extends ConsumerState<ServiceOrdersListScreen>
+    with SingleTickerProviderStateMixin {
   String? _expandedOrderId;
   final ScrollController _scrollController = ScrollController();
+  late TabController _tabController;
+  String _currentStatusFilter = 'all';
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _tabController = TabController(length: 5, vsync: this);
+    _tabController.addListener(_onTabChanged);
   }
 
   @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _tabController.removeListener(_onTabChanged);
+    _tabController.dispose();
     super.dispose();
   }
 
+  void _onTabChanged() {
+    setState(() {
+      switch (_tabController.index) {
+        case 0:
+          _currentStatusFilter = 'all';
+          break;
+        case 1:
+          _currentStatusFilter = 'pending';
+          break;
+        case 2:
+          _currentStatusFilter = 'in_progress';
+          break;
+        case 3:
+          _currentStatusFilter = 'completed';
+          break;
+        case 4:
+          _currentStatusFilter = 'delivered';
+          break;
+      }
+    });
+    ref.read(orderStatusFilterProvider.notifier).state = _currentStatusFilter;
+    ref.read(serviceOrdersPaginationProvider.notifier).refresh();
+  }
+
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       ref.read(serviceOrdersPaginationProvider.notifier).loadMore();
     }
   }
@@ -42,49 +76,79 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final paginationState = ref.watch(serviceOrdersPaginationProvider);
-    final dateFilter = ref.watch(orderDateFilterProvider);
-    final statusFilter = ref.watch(orderStatusFilterProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Service Orders'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () => _showFilterDialog(context, ref),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Active Filters Chips
-          if (dateFilter != 'all' || statusFilter != 'all')
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Wrap(
-                spacing: 8,
-                children: [
-                  if (dateFilter != 'all')
-                    Chip(
-                      label: Text('Date: ${_formatFilter(dateFilter)}'),
-                      onDeleted: () {
-                        ref.read(orderDateFilterProvider.notifier).state = 'all';
-                        ref.read(serviceOrdersPaginationProvider.notifier).refresh();
-                      },
-                    ),
-                  if (statusFilter != 'all')
-                    Chip(
-                      label: Text('Status: ${_formatFilter(statusFilter)}'),
-                      onDeleted: () {
-                        ref.read(orderStatusFilterProvider.notifier).state = 'all';
-                        ref.read(serviceOrdersPaginationProvider.notifier).refresh();
-                      },
-                    ),
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Container(
+            color: isDark ? AppColors.gray900 : AppColors.white,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: TabBar(
+                controller: _tabController,
+                isScrollable: true,
+                indicatorSize: TabBarIndicatorSize.label,
+                tabAlignment: TabAlignment.start,
+                indicator: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: AppColors.primaryBlue,
+                ),
+                labelColor: AppColors.white,
+                unselectedLabelColor:
+                    isDark ? AppColors.gray400 : AppColors.gray600,
+                labelStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                ),
+                labelPadding: const EdgeInsets.symmetric(horizontal: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                tabs: [
+                  _buildTab(
+                    'All',
+                    Icons.dashboard_rounded,
+                    _tabController.index == 0,
+                    isDark,
+                  ),
+                  _buildTab(
+                    'Pending',
+                    Icons.pending_actions_rounded,
+                    _tabController.index == 1,
+                    isDark,
+                  ),
+                  _buildTab(
+                    'In Progress',
+                    Icons.build_circle_rounded,
+                    _tabController.index == 2,
+                    isDark,
+                  ),
+                  _buildTab(
+                    'Completed',
+                    Icons.check_circle_rounded,
+                    _tabController.index == 3,
+                    isDark,
+                  ),
+                  _buildTab(
+                    'Delivered',
+                    Icons.local_shipping_rounded,
+                    _tabController.index == 4,
+                    isDark,
+                  ),
                 ],
               ),
             ),
-
+          ),
+        ),
+      ),
+      body: Column(
+        children: [
           // Orders List
           Expanded(
             child: paginationState.error != null
@@ -92,13 +156,16 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                        const Icon(Icons.error_outline,
+                            size: 48, color: AppColors.error),
                         const SizedBox(height: 16),
                         Text('Error: ${paginationState.error}'),
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: () {
-                            ref.read(serviceOrdersPaginationProvider.notifier).refresh();
+                            ref
+                                .read(serviceOrdersPaginationProvider.notifier)
+                                .refresh();
                           },
                           child: const Text('Retry'),
                         ),
@@ -113,7 +180,9 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                             Icon(
                               Icons.assignment_outlined,
                               size: 64,
-                              color: isDark ? AppColors.gray600 : AppColors.gray400,
+                              color: isDark
+                                  ? AppColors.gray600
+                                  : AppColors.gray400,
                             ),
                             const SizedBox(height: 16),
                             Text(
@@ -121,16 +190,18 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? AppColors.white : AppColors.textPrimary,
+                                color: isDark
+                                    ? AppColors.white
+                                    : AppColors.textPrimary,
                               ),
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              dateFilter != 'all' || statusFilter != 'all'
-                                  ? 'Try adjusting your filters'
-                                  : 'Create your first service order',
+                              'Create your first service order',
                               style: TextStyle(
-                                color: isDark ? AppColors.gray400 : AppColors.textSecondary,
+                                color: isDark
+                                    ? AppColors.gray400
+                                    : AppColors.textSecondary,
                               ),
                             ),
                           ],
@@ -138,12 +209,15 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                       )
                     : RefreshIndicator(
                         onRefresh: () async {
-                          ref.read(serviceOrdersPaginationProvider.notifier).refresh();
+                          ref
+                              .read(serviceOrdersPaginationProvider.notifier)
+                              .refresh();
                         },
                         child: ListView.builder(
                           controller: _scrollController,
                           padding: const EdgeInsets.all(16),
-                          itemCount: paginationState.orders.length + (paginationState.hasMore ? 1 : 0),
+                          itemCount: paginationState.orders.length +
+                              (paginationState.hasMore ? 1 : 0),
                           itemBuilder: (context, index) {
                             if (index == paginationState.orders.length) {
                               return const Center(
@@ -177,8 +251,8 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
     );
   }
 
-
-  Widget _buildOrderCard(BuildContext context, ServiceOrder order, bool isDark) {
+  Widget _buildOrderCard(
+      BuildContext context, ServiceOrder order, bool isDark) {
     return GestureDetector(
       onTap: () {
         // Navigate to edit screen
@@ -191,7 +265,8 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: isDark ? Colors.black26 : AppColors.gray300.withOpacity(0.3),
+              color:
+                  isDark ? Colors.black26 : AppColors.gray300.withOpacity(0.3),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -233,7 +308,9 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: isDark ? AppColors.white : AppColors.textPrimary,
+                            color: isDark
+                                ? AppColors.white
+                                : AppColors.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -241,14 +318,17 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                           'Order #${order.id.substring(0, 8)}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: isDark ? AppColors.gray400 : AppColors.textSecondary,
+                            color: isDark
+                                ? AppColors.gray400
+                                : AppColors.textSecondary,
                           ),
                         ),
                       ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: _getStatusColor(order.status),
                       borderRadius: BorderRadius.circular(12),
@@ -280,7 +360,7 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                             final vehicleAsync = ref.watch(
                               vehicleStreamProvider(order.vehicleId),
                             );
-                            
+
                             return vehicleAsync.when(
                               data: (vehicle) => _buildInfoItem(
                                 Icons.directions_car,
@@ -311,7 +391,7 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                             final customerAsync = ref.watch(
                               customerStreamProvider(order.customerId),
                             );
-                            
+
                             return customerAsync.when(
                               data: (customer) => _buildInfoItem(
                                 Icons.person,
@@ -347,7 +427,8 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                           Icons.calendar_today,
                           'Date',
                           order.createdAt != null
-                              ? DateFormat('MMM dd, yyyy').format(order.createdAt!)
+                              ? DateFormat('MMM dd, yyyy')
+                                  .format(order.createdAt!)
                               : 'N/A',
                           isDark,
                         ),
@@ -367,26 +448,32 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                   ),
 
                   // Expandable Details Button
-                  if ((order.description.isNotEmpty) || order.partsUsed.isNotEmpty) ...[
+                  if ((order.description.isNotEmpty) ||
+                      order.partsUsed.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     InkWell(
                       onTap: () {
                         setState(() {
-                          _expandedOrderId = _expandedOrderId == order.id ? null : order.id;
+                          _expandedOrderId =
+                              _expandedOrderId == order.id ? null : order.id;
                         });
                       },
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: isDark ? AppColors.gray800.withOpacity(0.3) : AppColors.gray100,
+                          color: isDark
+                              ? AppColors.gray800.withOpacity(0.3)
+                              : AppColors.gray100,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              _expandedOrderId == order.id ? 'Hide Details' : 'Show Details',
+                              _expandedOrderId == order.id
+                                  ? 'Hide Details'
+                                  : 'Show Details',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -394,8 +481,8 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                               ),
                             ),
                             Icon(
-                              _expandedOrderId == order.id 
-                                  ? Icons.expand_less 
+                              _expandedOrderId == order.id
+                                  ? Icons.expand_less
                                   : Icons.expand_more,
                               color: AppColors.primaryBlue,
                             ),
@@ -414,7 +501,9 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: isDark ? AppColors.gray800.withOpacity(0.3) : AppColors.gray100,
+                          color: isDark
+                              ? AppColors.gray800.withOpacity(0.3)
+                              : AppColors.gray100,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Column(
@@ -425,7 +514,9 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
-                                color: isDark ? AppColors.gray400 : AppColors.textSecondary,
+                                color: isDark
+                                    ? AppColors.gray400
+                                    : AppColors.textSecondary,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -433,7 +524,9 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                               order.description,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: isDark ? AppColors.white : AppColors.textPrimary,
+                                color: isDark
+                                    ? AppColors.white
+                                    : AppColors.textPrimary,
                               ),
                             ),
                           ],
@@ -448,7 +541,9 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: isDark ? AppColors.gray800.withOpacity(0.3) : AppColors.gray100,
+                          color: isDark
+                              ? AppColors.gray800.withOpacity(0.3)
+                              : AppColors.gray100,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Column(
@@ -459,7 +554,9 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                                 Icon(
                                   Icons.build,
                                   size: 16,
-                                  color: isDark ? AppColors.gray400 : AppColors.textSecondary,
+                                  color: isDark
+                                      ? AppColors.gray400
+                                      : AppColors.textSecondary,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -467,34 +564,42 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
-                                    color: isDark ? AppColors.gray400 : AppColors.textSecondary,
+                                    color: isDark
+                                        ? AppColors.gray400
+                                        : AppColors.textSecondary,
                                   ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 8),
-                            ...order.partsUsed.map((part) => Padding(
-                              padding: const EdgeInsets.only(bottom: 4),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.circle,
-                                    size: 6,
-                                    color: isDark ? AppColors.gray500 : AppColors.textSecondary,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      part,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: isDark ? AppColors.white : AppColors.textPrimary,
+                            ...order.partsUsed
+                                .map((part) => Padding(
+                                      padding: const EdgeInsets.only(bottom: 4),
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.circle,
+                                            size: 6,
+                                            color: isDark
+                                                ? AppColors.gray500
+                                                : AppColors.textSecondary,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              part,
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: isDark
+                                                    ? AppColors.white
+                                                    : AppColors.textPrimary,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )).toList(),
+                                    ))
+                                .toList(),
                           ],
                         ),
                       ),
@@ -542,7 +647,8 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: valueWeight ?? FontWeight.w600,
-                  color: valueColor ?? (isDark ? AppColors.white : AppColors.textPrimary),
+                  color: valueColor ??
+                      (isDark ? AppColors.white : AppColors.textPrimary),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -587,82 +693,56 @@ class _ServiceOrdersListScreenState extends ConsumerState<ServiceOrdersListScree
   }
 
   String _formatStatus(String status) {
-    return status.split('_').map((word) => 
-      word[0].toUpperCase() + word.substring(1)
-    ).join(' ');
+    return status
+        .split('_')
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
   }
 
-  String _formatFilter(String filter) {
-    return filter.split('_').map((word) => 
-      word[0].toUpperCase() + word.substring(1)
-    ).join(' ');
-  }
-
-  void _showFilterDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Filter Orders'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Date Range', style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: ['all', 'today', 'week', 'month'].map((filter) {
-                  return FilterChip(
-                    label: Text(_formatFilter(filter)),
-                    selected: ref.read(orderDateFilterProvider) == filter,
-                    onSelected: (selected) {
-                      if (selected) {
-                        ref.read(orderDateFilterProvider.notifier).state = filter;
-                      }
-                    },
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 16),
-              const Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: ['all', 'pending', 'in_progress', 'completed', 'delivered'].map((filter) {
-                  return FilterChip(
-                    label: Text(_formatFilter(filter)),
-                    selected: ref.read(orderStatusFilterProvider) == filter,
-                    onSelected: (selected) {
-                      if (selected) {
-                        ref.read(orderStatusFilterProvider.notifier).state = filter;
-                      }
-                    },
-                  );
-                }).toList(),
-              ),
-            ],
+  Widget _buildTab(String label, IconData icon, bool isSelected, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: isSelected
+            ? AppColors.primaryBlue
+            : isDark
+                ? AppColors.gray800.withOpacity(0.5)
+                : AppColors.gray100,
+        border: Border.all(
+          color: isSelected
+              ? AppColors.primaryBlue
+              : isDark
+                  ? AppColors.gray700
+                  : AppColors.gray300,
+          width: 1,
+        ),
+        boxShadow: isSelected
+            ? [
+                BoxShadow(
+                  color: AppColors.primaryBlue.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 18,
+            color: isSelected
+                ? AppColors.white
+                : isDark
+                    ? AppColors.gray400
+                    : AppColors.gray600,
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                ref.read(orderDateFilterProvider.notifier).state = 'all';
-                ref.read(orderStatusFilterProvider.notifier).state = 'all';
-                ref.read(serviceOrdersPaginationProvider.notifier).refresh();
-              },
-              child: const Text('Clear All'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                ref.read(serviceOrdersPaginationProvider.notifier).refresh();
-                Navigator.pop(context);
-              },
-              child: const Text('Apply'),
-            ),
-          ],
-        );
-      },
+          const SizedBox(width: 6),
+          Text(label),
+        ],
+      ),
     );
   }
 }
-

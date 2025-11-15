@@ -22,6 +22,7 @@ PartItem _$PartItemFromJson(Map<String, dynamic> json) {
 mixin _$PartItem {
   String get name => throw _privateConstructorUsedError;
   double get cost => throw _privateConstructorUsedError;
+  int get quantity => throw _privateConstructorUsedError;
 
   /// Serializes this PartItem to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -38,7 +39,7 @@ abstract class $PartItemCopyWith<$Res> {
   factory $PartItemCopyWith(PartItem value, $Res Function(PartItem) then) =
       _$PartItemCopyWithImpl<$Res, PartItem>;
   @useResult
-  $Res call({String name, double cost});
+  $Res call({String name, double cost, int quantity});
 }
 
 /// @nodoc
@@ -58,6 +59,7 @@ class _$PartItemCopyWithImpl<$Res, $Val extends PartItem>
   $Res call({
     Object? name = null,
     Object? cost = null,
+    Object? quantity = null,
   }) {
     return _then(_value.copyWith(
       name: null == name
@@ -68,6 +70,10 @@ class _$PartItemCopyWithImpl<$Res, $Val extends PartItem>
           ? _value.cost
           : cost // ignore: cast_nullable_to_non_nullable
               as double,
+      quantity: null == quantity
+          ? _value.quantity
+          : quantity // ignore: cast_nullable_to_non_nullable
+              as int,
     ) as $Val);
   }
 }
@@ -80,7 +86,7 @@ abstract class _$$PartItemImplCopyWith<$Res>
       __$$PartItemImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String name, double cost});
+  $Res call({String name, double cost, int quantity});
 }
 
 /// @nodoc
@@ -98,6 +104,7 @@ class __$$PartItemImplCopyWithImpl<$Res>
   $Res call({
     Object? name = null,
     Object? cost = null,
+    Object? quantity = null,
   }) {
     return _then(_$PartItemImpl(
       name: null == name
@@ -108,6 +115,10 @@ class __$$PartItemImplCopyWithImpl<$Res>
           ? _value.cost
           : cost // ignore: cast_nullable_to_non_nullable
               as double,
+      quantity: null == quantity
+          ? _value.quantity
+          : quantity // ignore: cast_nullable_to_non_nullable
+              as int,
     ));
   }
 }
@@ -115,7 +126,7 @@ class __$$PartItemImplCopyWithImpl<$Res>
 /// @nodoc
 @JsonSerializable()
 class _$PartItemImpl implements _PartItem {
-  const _$PartItemImpl({this.name = '', this.cost = 0.0});
+  const _$PartItemImpl({this.name = '', this.cost = 0.0, this.quantity = 1});
 
   factory _$PartItemImpl.fromJson(Map<String, dynamic> json) =>
       _$$PartItemImplFromJson(json);
@@ -126,10 +137,13 @@ class _$PartItemImpl implements _PartItem {
   @override
   @JsonKey()
   final double cost;
+  @override
+  @JsonKey()
+  final int quantity;
 
   @override
   String toString() {
-    return 'PartItem(name: $name, cost: $cost)';
+    return 'PartItem(name: $name, cost: $cost, quantity: $quantity)';
   }
 
   @override
@@ -138,12 +152,14 @@ class _$PartItemImpl implements _PartItem {
         (other.runtimeType == runtimeType &&
             other is _$PartItemImpl &&
             (identical(other.name, name) || other.name == name) &&
-            (identical(other.cost, cost) || other.cost == cost));
+            (identical(other.cost, cost) || other.cost == cost) &&
+            (identical(other.quantity, quantity) ||
+                other.quantity == quantity));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, name, cost);
+  int get hashCode => Object.hash(runtimeType, name, cost, quantity);
 
   /// Create a copy of PartItem
   /// with the given fields replaced by the non-null parameter values.
@@ -162,8 +178,10 @@ class _$PartItemImpl implements _PartItem {
 }
 
 abstract class _PartItem implements PartItem {
-  const factory _PartItem({final String name, final double cost}) =
-      _$PartItemImpl;
+  const factory _PartItem(
+      {final String name,
+      final double cost,
+      final int quantity}) = _$PartItemImpl;
 
   factory _PartItem.fromJson(Map<String, dynamic> json) =
       _$PartItemImpl.fromJson;
@@ -172,6 +190,8 @@ abstract class _PartItem implements PartItem {
   String get name;
   @override
   double get cost;
+  @override
+  int get quantity;
 
   /// Create a copy of PartItem
   /// with the given fields replaced by the non-null parameter values.

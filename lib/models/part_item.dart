@@ -8,6 +8,7 @@ class PartItem with _$PartItem {
   const factory PartItem({
     @Default('') String name,
     @Default(0.0) double cost,
+    @Default(1) int quantity,
   }) = _PartItem;
 
   factory PartItem.fromJson(Map<String, dynamic> json) => _$PartItemFromJson(json);
