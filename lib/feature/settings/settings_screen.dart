@@ -1,26 +1,27 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chat_app/core/styles/app_colors.dart';
 import 'package:chat_app/core/services/backup_service.dart';
+import 'package:chat_app/core/services/notification_controller.dart';
 import 'package:go_router/go_router.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
-  bool _notificationsEnabled = true;
-  bool _emailNotifications = true;
-  bool _pushNotifications = true;
-  bool _serviceReminders = true;
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _autoBackup = false;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final notificationPrefs = ref.watch(notificationControllerProvider);
+    final notificationController =
+        ref.read(notificationControllerProvider.notifier);
 
     return Scaffold(
       appBar: AppBar(
@@ -95,48 +96,100 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildSwitchTile(
                 isDark,
                 'Enable Notifications',
-                'Receive notifications for important updates',
-                Icons.notifications,
-                _notificationsEnabled,
-                (value) {
-                  setState(() => _notificationsEnabled = value);
-                },
+                'Master toggle for all notifications',
+                Icons.notifications_active,
+                notificationPrefs.enabled,
+                (value) => notificationController.updateEnabled(value),
               ),
               const Divider(height: 1),
               _buildSwitchTile(
                 isDark,
-                'Push Notifications',
-                'Get push notifications on your device',
-                Icons.mobile_friendly,
-                _pushNotifications,
-                (value) {
-                  setState(() => _pushNotifications = value);
-                },
-                enabled: _notificationsEnabled,
+                'New Service Orders',
+                'Notify when new order is created',
+                Icons.add_circle,
+                notificationPrefs.newOrderNotifications,
+                (value) =>
+                    notificationController.updateNewOrderNotifications(value),
+                enabled: notificationPrefs.enabled,
               ),
               const Divider(height: 1),
               _buildSwitchTile(
                 isDark,
-                'Email Notifications',
-                'Receive notifications via email',
-                Icons.email,
-                _emailNotifications,
-                (value) {
-                  setState(() => _emailNotifications = value);
-                },
-                enabled: _notificationsEnabled,
+                'Status Changes',
+                'Notify when order status changes',
+                Icons.update,
+                notificationPrefs.statusChangeNotifications,
+                (value) => notificationController
+                    .updateStatusChangeNotifications(value),
+                enabled: notificationPrefs.enabled,
               ),
               const Divider(height: 1),
               _buildSwitchTile(
                 isDark,
-                'Service Reminders',
-                'Get reminders for upcoming services',
-                Icons.alarm,
-                _serviceReminders,
-                (value) {
-                  setState(() => _serviceReminders = value);
-                },
-                enabled: _notificationsEnabled,
+                'Daily Summary',
+                'Get daily work summary every morning',
+                Icons.summarize,
+                notificationPrefs.dailySummaryNotifications,
+                (value) => notificationController
+                    .updateDailySummaryNotifications(value),
+                enabled: notificationPrefs.enabled,
+              ),
+              const Divider(height: 1),
+              _buildSwitchTile(
+                isDark,
+                '30-Day Reminders',
+                'Follow-up reminders for completed orders',
+                Icons.event_repeat,
+                notificationPrefs.monthlyReminderNotifications,
+                (value) => notificationController
+                    .updateMonthlyReminderNotifications(value),
+                enabled: notificationPrefs.enabled,
+              ),
+              const Divider(height: 1),
+              _buildSwitchTile(
+                isDark,
+                'Overdue Order Alerts',
+                'Alert for orders taking too long',
+                Icons.warning,
+                notificationPrefs.overdueOrderNotifications,
+                (value) => notificationController
+                    .updateOverdueOrderNotifications(value),
+                enabled: notificationPrefs.enabled,
+              ),
+              const Divider(height: 1),
+              _buildActionTile(
+                isDark,
+                'Daily Summary Time',
+                '${notificationPrefs.dailySummaryHour.toString().padLeft(2, '0')}:${notificationPrefs.dailySummaryMinute.toString().padLeft(2, '0')}',
+                Icons.schedule,
+                () => _showTimePicker(
+                  context,
+                  notificationPrefs.dailySummaryHour,
+                  notificationPrefs.dailySummaryMinute,
+                  (hour, minute) => notificationController
+                      .updateDailySummaryTime(hour, minute),
+                ),
+              ),
+              const Divider(height: 1),
+              _buildActionTile(
+                isDark,
+                'Overdue Threshold',
+                '${notificationPrefs.overdueThresholdDays} days',
+                Icons.timer,
+                () => _showThresholdPicker(
+                  context,
+                  notificationPrefs.overdueThresholdDays,
+                  (days) =>
+                      notificationController.updateOverdueThresholdDays(days),
+                ),
+              ),
+              const Divider(height: 1),
+              _buildActionTile(
+                isDark,
+                'Test Notification',
+                'Send a test notification',
+                Icons.notification_add,
+                () => notificationController.sendTestNotification(),
               ),
             ],
           ),
@@ -580,6 +633,114 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: const Text('Logout'),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showTimePicker(
+    BuildContext context,
+    int currentHour,
+    int currentMinute,
+    Function(int hour, int minute) onTimeSelected,
+  ) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: currentHour, minute: currentMinute),
+    );
+
+    if (picked != null) {
+      onTimeSelected(picked.hour, picked.minute);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Daily summary time updated to ${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}',
+            ),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _showThresholdPicker(
+    BuildContext context,
+    int currentDays,
+    Function(int days) onDaysSelected,
+  ) async {
+    int selectedDays = currentDays;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Overdue Threshold'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Orders in progress for more than:'),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        onPressed: selectedDays > 1
+                            ? () => setState(() => selectedDays--)
+                            : null,
+                        icon: const Icon(Icons.remove_circle),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '$selectedDays days',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: selectedDays < 30
+                            ? () => setState(() => selectedDays++)
+                            : null,
+                        icon: const Icon(Icons.add_circle),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    onDaysSelected(selectedDays);
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content:
+                            Text('Overdue threshold set to $selectedDays days'),
+                        backgroundColor: AppColors.success,
+                      ),
+                    );
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
         );
       },
     );

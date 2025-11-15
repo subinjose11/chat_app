@@ -13,6 +13,7 @@ import 'package:chat_app/feature/service_orders/presentation/ui/service_orders_l
 import 'package:chat_app/feature/reports/presentation/ui/reports_list_screen.dart';
 import 'package:chat_app/feature/reports/presentation/ui/report_detail_screen.dart';
 import 'package:chat_app/feature/vehicles/presentation/ui/vehicle_registration_screen.dart';
+import 'package:chat_app/feature/notifications/notifications_screen.dart';
 import 'package:chat_app/models/service_order.dart';
 import 'package:chat_app/feature/customers/presentation/ui/customer_list_screen.dart';
 import 'package:chat_app/feature/settings/settings_screen.dart';
@@ -162,6 +163,11 @@ class AppRouter {
         path: '/analytics',
         name: 'analytics',
         builder: (context, state) => const AnalyticsScreen(),
+      ),
+      GoRoute(
+        path: '/notifications',
+        name: 'notifications',
+        builder: (context, state) => const NotificationsScreen(),
       ),
     ],
   );

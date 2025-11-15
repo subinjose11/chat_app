@@ -51,5 +51,12 @@
 	<string>Camera Library Use</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Mic Library Use</string>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>We need notification permission to alert you about service orders, status changes, and daily summaries</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

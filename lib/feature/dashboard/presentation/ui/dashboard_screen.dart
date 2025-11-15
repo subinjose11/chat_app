@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:chat_app/core/styles/app_colors.dart';
 import 'package:chat_app/feature/dashboard/presentation/controller/dashboard_controller.dart';
 import 'package:chat_app/feature/home/presentation/controller/home_controller.dart';
+import 'package:chat_app/local/notification_history_repo.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
@@ -19,12 +20,7 @@ class DashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              // TODO: Show notifications
-            },
-          ),
+          _buildNotificationIcon(ref, context),
           const SizedBox(width: 8),
         ],
       ),
@@ -415,6 +411,62 @@ class DashboardScreen extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationIcon(WidgetRef ref, BuildContext context) {
+    final unreadCountAsync = ref.watch(unreadNotificationCountProvider);
+
+    return unreadCountAsync.when(
+      data: (unreadCount) {
+        return Stack(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined),
+              onPressed: () {
+                context.push('/notifications');
+              },
+            ),
+            if (unreadCount > 0)
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.error,
+                    shape: BoxShape.circle,
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 18,
+                    minHeight: 18,
+                  ),
+                  child: Text(
+                    unreadCount > 99 ? '99+' : unreadCount.toString(),
+                    style: const TextStyle(
+                      color: AppColors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+      loading: () => IconButton(
+        icon: const Icon(Icons.notifications_outlined),
+        onPressed: () {
+          context.push('/notifications');
+        },
+      ),
+      error: (error, stack) => IconButton(
+        icon: const Icon(Icons.notifications_outlined),
+        onPressed: () {
+          context.push('/notifications');
+        },
       ),
     );
   }
