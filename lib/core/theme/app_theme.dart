@@ -19,6 +19,11 @@ final lightTheme = ThemeData(
     elevation: 0,
     centerTitle: true,
     iconTheme: IconThemeData(color: AppColors.textPrimary),
+    titleTextStyle: TextStyle(
+      fontSize: 24,
+      fontWeight: FontWeight.bold,
+      color: AppColors.textPrimary,
+    ),
   ),
   cardTheme: CardThemeData(
     color: AppColors.cardBackgroundLight,
@@ -80,6 +85,11 @@ final darkTheme = ThemeData(
     elevation: 0,
     centerTitle: true,
     iconTheme: IconThemeData(color: AppColors.white),
+    titleTextStyle: TextStyle(
+      fontSize: 24,
+      fontWeight: FontWeight.bold,
+      color: AppColors.white,
+    ),
   ),
   cardTheme: CardThemeData(
     color: AppColors.cardBackgroundDark,
