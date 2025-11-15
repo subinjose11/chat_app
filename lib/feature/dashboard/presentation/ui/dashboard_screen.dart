@@ -74,7 +74,8 @@ class DashboardScreen extends ConsumerWidget {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                DateFormat('EEEE, MMMM d, y').format(DateTime.now()),
+                                DateFormat('EEEE, MMMM d, y')
+                                    .format(DateTime.now()),
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: AppColors.white.withOpacity(0.9),
@@ -131,8 +132,12 @@ class DashboardScreen extends ConsumerWidget {
                         value: analytics['totalVehicles']?.toString() ?? '0',
                         icon: Icons.directions_car,
                         iconColor: AppColors.primaryBlue,
-                        gradient: [AppColors.primaryBlue.withOpacity(0.1), AppColors.primaryBlue.withOpacity(0.05)],
-                        onTap: () => ref.read(navIndexProvider.notifier).state = 1,
+                        gradient: [
+                          AppColors.primaryBlue.withOpacity(0.1),
+                          AppColors.primaryBlue.withOpacity(0.05)
+                        ],
+                        onTap: () =>
+                            ref.read(navIndexProvider.notifier).state = 1,
                       ),
                       _buildInteractiveSummaryCard(
                         context: context,
@@ -142,8 +147,12 @@ class DashboardScreen extends ConsumerWidget {
                         value: analytics['activeOrders']?.toString() ?? '0',
                         icon: Icons.build_circle,
                         iconColor: AppColors.warning,
-                        gradient: [AppColors.warning.withOpacity(0.1), AppColors.warning.withOpacity(0.05)],
-                        onTap: () => ref.read(navIndexProvider.notifier).state = 2,
+                        gradient: [
+                          AppColors.warning.withOpacity(0.1),
+                          AppColors.warning.withOpacity(0.05)
+                        ],
+                        onTap: () =>
+                            ref.read(navIndexProvider.notifier).state = 2,
                       ),
                       _buildInteractiveSummaryCard(
                         context: context,
@@ -153,18 +162,26 @@ class DashboardScreen extends ConsumerWidget {
                         value: analytics['completedOrders']?.toString() ?? '0',
                         icon: Icons.check_circle,
                         iconColor: AppColors.success,
-                        gradient: [AppColors.success.withOpacity(0.1), AppColors.success.withOpacity(0.05)],
-                        onTap: () => ref.read(navIndexProvider.notifier).state = 3,
+                        gradient: [
+                          AppColors.success.withOpacity(0.1),
+                          AppColors.success.withOpacity(0.05)
+                        ],
+                        onTap: () =>
+                            ref.read(navIndexProvider.notifier).state = 3,
                       ),
                       _buildInteractiveSummaryCard(
                         context: context,
                         ref: ref,
                         key: const ValueKey('summary_revenue'),
                         title: 'Total Revenue',
-                        value: '₹${(analytics['totalRevenue'] ?? 0.0).toStringAsFixed(0)}',
+                        value:
+                            '₹${(analytics['totalRevenue'] ?? 0.0).toStringAsFixed(0)}',
                         icon: Icons.account_balance_wallet,
                         iconColor: const Color(0xFF00C853),
-                        gradient: [const Color(0xFF00C853).withOpacity(0.1), const Color(0xFF00C853).withOpacity(0.05)],
+                        gradient: [
+                          const Color(0xFF00C853).withOpacity(0.1),
+                          const Color(0xFF00C853).withOpacity(0.05)
+                        ],
                         onTap: () {
                           // Could navigate to payments/analytics
                         },
@@ -183,7 +200,8 @@ class DashboardScreen extends ConsumerWidget {
                     padding: const EdgeInsets.all(32),
                     child: Column(
                       children: [
-                        const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                        const Icon(Icons.error_outline,
+                            size: 48, color: AppColors.error),
                         const SizedBox(height: 16),
                         Text('Error loading analytics: ${error.toString()}'),
                         const SizedBox(height: 16),
@@ -211,7 +229,7 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               Row(
                 children: [
                   Expanded(
@@ -302,13 +320,14 @@ class DashboardScreen extends ConsumerWidget {
                     icon: const Icon(Icons.arrow_forward, size: 16),
                     label: const Text('View All'),
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              
+
               recentActivityAsync.when(
                 data: (ordersAsync) {
                   return ordersAsync.when(
@@ -317,10 +336,14 @@ class DashboardScreen extends ConsumerWidget {
                         return Container(
                           padding: const EdgeInsets.all(32),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.cardBackgroundDark : AppColors.white,
+                            color: isDark
+                                ? AppColors.cardBackgroundDark
+                                : AppColors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: isDark ? AppColors.gray700 : AppColors.gray300,
+                              color: isDark
+                                  ? AppColors.gray700
+                                  : AppColors.gray300,
                             ),
                           ),
                           child: Column(
@@ -328,7 +351,9 @@ class DashboardScreen extends ConsumerWidget {
                               Icon(
                                 Icons.inbox_outlined,
                                 size: 48,
-                                color: isDark ? AppColors.gray600 : AppColors.gray400,
+                                color: isDark
+                                    ? AppColors.gray600
+                                    : AppColors.gray400,
                               ),
                               const SizedBox(height: 12),
                               Text(
@@ -336,7 +361,9 @@ class DashboardScreen extends ConsumerWidget {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
-                                  color: isDark ? AppColors.gray500 : AppColors.textSecondary,
+                                  color: isDark
+                                      ? AppColors.gray500
+                                      : AppColors.textSecondary,
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -344,7 +371,9 @@ class DashboardScreen extends ConsumerWidget {
                                 'Create a service order to get started',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: isDark ? AppColors.gray600 : AppColors.textHint,
+                                  color: isDark
+                                      ? AppColors.gray600
+                                      : AppColors.textHint,
                                 ),
                               ),
                             ],
@@ -354,7 +383,7 @@ class DashboardScreen extends ConsumerWidget {
 
                       // Show only last 5 activities
                       final recentOrders = orders.take(5).toList();
-                  
+
                       return Column(
                         children: recentOrders.map((order) {
                           return Padding(
@@ -364,8 +393,9 @@ class DashboardScreen extends ConsumerWidget {
                               isDark: isDark,
                               icon: _getActivityIcon(order.status),
                               title: _getActivityTitle(order.status),
-                              subtitle: '${order.serviceType} - ₹${order.totalCost.toStringAsFixed(2)}',
-                              time: order.createdAt != null 
+                              subtitle:
+                                  '${order.serviceType} - ₹${order.totalCost.toStringAsFixed(2)}',
+                              time: order.createdAt != null
                                   ? _getTimeAgo(order.createdAt!)
                                   : 'Recently',
                               statusColor: _getStatusColor(order.status),
@@ -406,7 +436,7 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 24),
             ],
           ),
@@ -424,6 +454,7 @@ class DashboardScreen extends ConsumerWidget {
           children: [
             IconButton(
               icon: const Icon(Icons.notifications_outlined),
+              iconSize: 36,
               onPressed: () {
                 context.push('/notifications');
               },
@@ -434,7 +465,7 @@ class DashboardScreen extends ConsumerWidget {
                 top: 8,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: AppColors.error,
                     shape: BoxShape.circle,
                   ),
@@ -471,11 +502,12 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTodayStats(BuildContext context, bool isDark, Map<String, dynamic> analytics) {
+  Widget _buildTodayStats(
+      BuildContext context, bool isDark, Map<String, dynamic> analytics) {
     final todayOrders = analytics['todayOrders'] ?? 0;
     final todayRevenue = analytics['todayRevenue'] ?? 0.0;
     final pendingOrders = analytics['pendingOrders'] ?? 0;
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -486,9 +518,7 @@ class DashboardScreen extends ConsumerWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: isDark
-                ? Colors.black26
-                : AppColors.gray300.withOpacity(0.2),
+            color: isDark ? Colors.black26 : AppColors.gray300.withOpacity(0.2),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -616,7 +646,7 @@ class DashboardScreen extends ConsumerWidget {
     VoidCallback? onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -637,9 +667,8 @@ class DashboardScreen extends ConsumerWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: isDark
-                  ? Colors.black26
-                  : AppColors.gray300.withOpacity(0.2),
+              color:
+                  isDark ? Colors.black26 : AppColors.gray300.withOpacity(0.2),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -716,9 +745,8 @@ class DashboardScreen extends ConsumerWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: isDark
-                  ? Colors.black26
-                  : AppColors.gray300.withOpacity(0.2),
+              color:
+                  isDark ? Colors.black26 : AppColors.gray300.withOpacity(0.2),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -842,9 +870,8 @@ class DashboardScreen extends ConsumerWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: isDark
-                  ? Colors.black26
-                  : AppColors.gray300.withOpacity(0.2),
+              color:
+                  isDark ? Colors.black26 : AppColors.gray300.withOpacity(0.2),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -882,9 +909,8 @@ class DashboardScreen extends ConsumerWidget {
                     subtitle,
                     style: TextStyle(
                       fontSize: 12,
-                      color: isDark
-                          ? AppColors.gray400
-                          : AppColors.textSecondary,
+                      color:
+                          isDark ? AppColors.gray400 : AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -914,4 +940,3 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 }
-

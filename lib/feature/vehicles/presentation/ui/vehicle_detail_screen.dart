@@ -132,6 +132,9 @@ class _EditVehicleDialogState extends ConsumerState<_EditVehicleDialog> {
           .updateVehicle(context, updatedVehicle);
 
       if (mounted) {
+        // Refresh the vehicles list silently
+        ref.read(vehiclesPaginationProvider.notifier).silentRefresh();
+
         Navigator.pop(context, updatedVehicle);
       }
     }

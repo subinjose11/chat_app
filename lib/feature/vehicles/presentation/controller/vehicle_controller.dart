@@ -60,7 +60,8 @@ class VehiclesPaginationState {
 }
 
 // Vehicles Pagination Notifier
-class VehiclesPaginationNotifier extends StateNotifier<VehiclesPaginationState> {
+class VehiclesPaginationNotifier
+    extends StateNotifier<VehiclesPaginationState> {
   final VehicleRepository _repository;
   final String _searchQuery;
   final String _statusFilter;
@@ -82,11 +83,12 @@ class VehiclesPaginationNotifier extends StateNotifier<VehiclesPaginationState> 
       );
 
       final filteredVehicles = _applyStatusFilter(vehicles);
-      
+
       // Get last document if vehicles exist
       DocumentSnapshot? lastDoc;
       if (filteredVehicles.isNotEmpty) {
-        lastDoc = await _repository.getVehicleDocument(filteredVehicles.last.id);
+        lastDoc =
+            await _repository.getVehicleDocument(filteredVehicles.last.id);
       }
 
       state = state.copyWith(
@@ -127,7 +129,8 @@ class VehiclesPaginationNotifier extends StateNotifier<VehiclesPaginationState> 
       // Get last document
       DocumentSnapshot? lastDoc;
       if (filteredNewVehicles.isNotEmpty) {
-        lastDoc = await _repository.getVehicleDocument(filteredNewVehicles.last.id);
+        lastDoc =
+            await _repository.getVehicleDocument(filteredNewVehicles.last.id);
       }
 
       state = state.copyWith(
@@ -149,7 +152,7 @@ class VehiclesPaginationNotifier extends StateNotifier<VehiclesPaginationState> 
       return vehicles;
     }
     return vehicles
-        .where((vehicle) => 
+        .where((vehicle) =>
             vehicle.serviceStatus.toLowerCase() == _statusFilter.toLowerCase())
         .toList();
   }
@@ -168,11 +171,12 @@ class VehiclesPaginationNotifier extends StateNotifier<VehiclesPaginationState> 
       );
 
       final filteredVehicles = _applyStatusFilter(vehicles);
-      
+
       // Get last document if vehicles exist
       DocumentSnapshot? lastDoc;
       if (filteredVehicles.isNotEmpty) {
-        lastDoc = await _repository.getVehicleDocument(filteredVehicles.last.id);
+        lastDoc =
+            await _repository.getVehicleDocument(filteredVehicles.last.id);
       }
 
       // Only update if data has changed
@@ -190,9 +194,10 @@ class VehiclesPaginationNotifier extends StateNotifier<VehiclesPaginationState> 
     }
   }
 
-  bool _hasVehiclesChanged(List<Vehicle> oldVehicles, List<Vehicle> newVehicles) {
+  bool _hasVehiclesChanged(
+      List<Vehicle> oldVehicles, List<Vehicle> newVehicles) {
     if (oldVehicles.length != newVehicles.length) return true;
-    
+
     for (int i = 0; i < oldVehicles.length; i++) {
       if (oldVehicles[i].id != newVehicles[i].id ||
           oldVehicles[i].serviceStatus != newVehicles[i].serviceStatus ||
@@ -200,7 +205,7 @@ class VehiclesPaginationNotifier extends StateNotifier<VehiclesPaginationState> 
         return true;
       }
     }
-    
+
     return false;
   }
 }
@@ -218,13 +223,15 @@ final vehiclesStreamProvider = StreamProvider<List<Vehicle>>((ref) {
 });
 
 // Stream Provider for single vehicle by ID
-final vehicleStreamProvider = StreamProvider.family<Vehicle?, String>((ref, vehicleId) {
+final vehicleStreamProvider =
+    StreamProvider.family<Vehicle?, String>((ref, vehicleId) {
   final vehicleRepository = ref.watch(vehicleRepositoryProvider);
   return vehicleRepository.getVehicleStream(vehicleId);
 });
 
 // Stream Provider for customer vehicles
-final customerVehiclesStreamProvider = StreamProvider.family<List<Vehicle>, String>((ref, customerId) {
+final customerVehiclesStreamProvider =
+    StreamProvider.family<List<Vehicle>, String>((ref, customerId) {
   final vehicleRepository = ref.watch(vehicleRepositoryProvider);
   return vehicleRepository.getVehiclesByCustomer(customerId);
 });
@@ -251,7 +258,8 @@ final filteredVehiclesProvider = Provider<AsyncValue<List<Vehicle>>>((ref) {
         return AsyncValue.data(vehicles);
       }
       final filtered = vehicles
-          .where((vehicle) => vehicle.serviceStatus.toLowerCase() == statusFilter.toLowerCase())
+          .where((vehicle) =>
+              vehicle.serviceStatus.toLowerCase() == statusFilter.toLowerCase())
           .toList();
       return AsyncValue.data(filtered);
     },
@@ -261,11 +269,12 @@ final filteredVehiclesProvider = Provider<AsyncValue<List<Vehicle>>>((ref) {
 });
 
 // Vehicles Pagination Provider
-final vehiclesPaginationProvider = StateNotifierProvider<VehiclesPaginationNotifier, VehiclesPaginationState>((ref) {
+final vehiclesPaginationProvider =
+    StateNotifierProvider<VehiclesPaginationNotifier, VehiclesPaginationState>(
+        (ref) {
   final repository = ref.watch(vehicleRepositoryProvider);
   final searchQuery = ref.watch(vehicleSearchQueryProvider);
   final statusFilter = ref.watch(vehicleStatusFilterProvider);
-  
+
   return VehiclesPaginationNotifier(repository, searchQuery, statusFilter);
 });
-
