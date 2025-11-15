@@ -594,18 +594,29 @@ class VehicleDetailScreen extends ConsumerWidget {
                               isDark ? AppColors.white : AppColors.textPrimary,
                         ),
                       ),
-                      TextButton.icon(
-                        onPressed: () {
-                          // TODO: Show all history
+                      serviceOrdersAsync.when(
+                        data: (orders) {
+                          if (orders.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+                          return TextButton.icon(
+                            onPressed: () {
+                              // Navigate to vehicle service history screen
+                              context.push('/vehicle-service-history',
+                                  extra: vehicle);
+                            },
+                            icon: const Icon(Icons.history, size: 18),
+                            label: const Text('View All'),
+                          );
                         },
-                        icon: const Icon(Icons.history, size: 18),
-                        label: const Text('View All'),
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
 
-                  // Display service orders from Firebase
+                  // Display service orders from Firebase (last 5 only)
                   serviceOrdersAsync.when(
                     data: (orders) {
                       if (orders.isEmpty) {
@@ -636,12 +647,15 @@ class VehicleDetailScreen extends ConsumerWidget {
                         );
                       }
 
+                      // Show only last 5 orders
+                      final last5Orders = orders.take(5).toList();
+
                       return ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: orders.length,
+                        itemCount: last5Orders.length,
                         itemBuilder: (context, index) {
-                          final service = orders[index];
+                          final service = last5Orders[index];
                           return Container(
                             key: ValueKey('service_order_${service.id}'),
                             child: _buildTimelineItem(

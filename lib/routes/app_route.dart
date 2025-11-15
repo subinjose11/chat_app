@@ -8,6 +8,7 @@ import 'package:chat_app/feature/home/presentation/ui/home.dart';
 import 'package:chat_app/feature/dashboard/presentation/ui/dashboard_screen.dart';
 import 'package:chat_app/feature/vehicles/presentation/ui/vehicle_list_screen.dart';
 import 'package:chat_app/feature/vehicles/presentation/ui/vehicle_detail_screen.dart';
+import 'package:chat_app/feature/vehicles/presentation/ui/vehicle_service_history_screen.dart';
 import 'package:chat_app/feature/service_orders/presentation/ui/service_order_screen.dart';
 import 'package:chat_app/feature/service_orders/presentation/ui/service_orders_list_screen.dart';
 import 'package:chat_app/feature/reports/presentation/ui/reports_list_screen.dart';
@@ -78,6 +79,14 @@ class AppRouter {
         builder: (context, state) {
           final vehicle = state.extra as Vehicle;
           return VehicleDetailScreen(vehicle: vehicle);
+        },
+      ),
+      GoRoute(
+        path: '/vehicle-service-history',
+        name: 'vehicle-service-history',
+        builder: (context, state) {
+          final vehicle = state.extra as Vehicle;
+          return VehicleServiceHistoryScreen(vehicle: vehicle);
         },
       ),
       GoRoute(

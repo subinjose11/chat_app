@@ -318,3 +318,116 @@ final orderStatusFilterProvider = StateProvider<String>((ref) => 'all');
 // Filter Providers for Reports
 final reportDateFilterProvider = StateProvider<String>((ref) => 'all');
 final reportStatusFilterProvider = StateProvider<String>((ref) => 'all');
+
+// Vehicle Service Orders Pagination Notifier
+class VehicleServiceOrdersPaginationNotifier
+    extends StateNotifier<ServiceOrdersPaginationState> {
+  final ServiceOrderRepository _repository;
+  final String _vehicleId;
+
+  VehicleServiceOrdersPaginationNotifier(
+    this._repository,
+    this._vehicleId,
+  ) : super(ServiceOrdersPaginationState()) {
+    loadInitialData();
+  }
+
+  Future<void> loadInitialData() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final orders = await _repository.getServiceOrdersByVehiclePaginated(
+        vehicleId: _vehicleId,
+        limit: 20,
+      );
+
+      // Get last document if orders exist
+      DocumentSnapshot? lastDoc;
+      if (orders.isNotEmpty) {
+        lastDoc = await _repository.getServiceOrderDocument(orders.last.id);
+      }
+
+      print(
+          '🔍 [Vehicle Pagination] Initial load: ${orders.length} orders loaded');
+      print('🔍 [Vehicle Pagination] Has more: ${orders.length >= 20}');
+
+      state = state.copyWith(
+        orders: orders,
+        isLoading: false,
+        hasMore: orders.length >= 20,
+        lastDocument: lastDoc,
+      );
+    } catch (e) {
+      print('❌ [Vehicle Pagination] Error loading initial data: $e');
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (state.isLoading || !state.hasMore) {
+      print(
+          '⚠️ [Vehicle Pagination] Load more skipped - isLoading: ${state.isLoading}, hasMore: ${state.hasMore}');
+      return;
+    }
+
+    print(
+        '📥 [Vehicle Pagination] Loading more... Current count: ${state.orders.length}');
+    state = state.copyWith(isLoading: true);
+    try {
+      final newOrders = await _repository.getServiceOrdersByVehiclePaginated(
+        vehicleId: _vehicleId,
+        limit: 20,
+        lastDocument: state.lastDocument,
+      );
+
+      print('🔍 [Vehicle Pagination] Loaded ${newOrders.length} more orders');
+
+      if (newOrders.isEmpty) {
+        print('✅ [Vehicle Pagination] No more orders to load');
+        state = state.copyWith(
+          isLoading: false,
+          hasMore: false,
+        );
+        return;
+      }
+
+      // Get last document
+      DocumentSnapshot? lastDoc;
+      if (newOrders.isNotEmpty) {
+        lastDoc = await _repository.getServiceOrderDocument(newOrders.last.id);
+      }
+
+      final totalOrders = state.orders.length + newOrders.length;
+      print('✅ [Vehicle Pagination] Total orders now: $totalOrders');
+
+      state = state.copyWith(
+        orders: [...state.orders, ...newOrders],
+        isLoading: false,
+        hasMore: newOrders.length >= 20,
+        lastDocument: lastDoc,
+      );
+    } catch (e) {
+      print('❌ [Vehicle Pagination] Error loading more: $e');
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  void refresh() {
+    state = ServiceOrdersPaginationState();
+    loadInitialData();
+  }
+}
+
+// Vehicle Service Orders Pagination Provider
+final vehicleServiceOrdersPaginationProvider = StateNotifierProvider.family<
+    VehicleServiceOrdersPaginationNotifier,
+    ServiceOrdersPaginationState,
+    String>((ref, vehicleId) {
+  final repository = ref.watch(serviceOrderRepositoryProvider);
+  return VehicleServiceOrdersPaginationNotifier(repository, vehicleId);
+});
