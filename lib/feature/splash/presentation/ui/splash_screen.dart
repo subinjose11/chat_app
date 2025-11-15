@@ -4,7 +4,6 @@ import 'package:chat_app/core/styles/text_styles.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'dart:math' as math;
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
