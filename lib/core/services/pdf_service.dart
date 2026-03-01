@@ -12,84 +12,6 @@ import 'package:chat_app/models/payment.dart';
 import 'package:chat_app/models/part_item.dart';
 
 class PdfService {
-  // Convert number to words
-  static String _numberToWords(double number) {
-    if (number == 0) return 'Zero';
-
-    final int rupees = number.floor();
-    final int paise = ((number - rupees) * 100).round();
-
-    String result = _convertToWords(rupees);
-    if (result.isNotEmpty) {
-      result += ' Rupees';
-    }
-
-    if (paise > 0) {
-      result += ' and ${_convertToWords(paise)} Paise';
-    }
-
-    result += ' Only';
-    return result;
-  }
-
-  static String _convertToWords(int number) {
-    if (number == 0) return '';
-
-    final List<String> ones = [
-      '',
-      'One',
-      'Two',
-      'Three',
-      'Four',
-      'Five',
-      'Six',
-      'Seven',
-      'Eight',
-      'Nine'
-    ];
-    final List<String> teens = [
-      'Ten',
-      'Eleven',
-      'Twelve',
-      'Thirteen',
-      'Fourteen',
-      'Fifteen',
-      'Sixteen',
-      'Seventeen',
-      'Eighteen',
-      'Nineteen'
-    ];
-    final List<String> tens = [
-      '',
-      '',
-      'Twenty',
-      'Thirty',
-      'Forty',
-      'Fifty',
-      'Sixty',
-      'Seventy',
-      'Eighty',
-      'Ninety'
-    ];
-
-    if (number < 10) return ones[number];
-    if (number < 20) return teens[number - 10];
-    if (number < 100) {
-      return tens[number ~/ 10] +
-          (number % 10 != 0 ? ' ${ones[number % 10]}' : '');
-    }
-    if (number < 1000) {
-      return '${ones[number ~/ 100]} Hundred${number % 100 != 0 ? ' ${_convertToWords(number % 100)}' : ''}';
-    }
-    if (number < 100000) {
-      return '${_convertToWords(number ~/ 1000)} Thousand${number % 1000 != 0 ? ' ${_convertToWords(number % 1000)}' : ''}';
-    }
-    if (number < 10000000) {
-      return '${_convertToWords(number ~/ 100000)} Lakh${number % 100000 != 0 ? ' ${_convertToWords(number % 100000)}' : ''}';
-    }
-    return '${_convertToWords(number ~/ 10000000)} Crore${number % 10000000 != 0 ? ' ${_convertToWords(number % 10000000)}' : ''}';
-  }
-
   // Generate Service Report PDF - Standard Billing Invoice
   static Future<File> generateServiceReport({
     required ServiceOrder order,
@@ -127,7 +49,7 @@ class PdfService {
           pw.SizedBox(height: 8),
 
           // Vehicle Information Bar
-          if (vehicle != null) _buildVehicleInfoBar(vehicle),
+          if (vehicle != null) _buildVehicleInfoBar(vehicle, kmRun: order.kmRun),
           if (vehicle != null) pw.SizedBox(height: 8),
 
           // Itemized Services & Parts Table
@@ -371,7 +293,7 @@ class PdfService {
   }
 
   // Build Vehicle Info Bar
-  static pw.Widget _buildVehicleInfoBar(Vehicle vehicle) {
+  static pw.Widget _buildVehicleInfoBar(Vehicle vehicle, {int? kmRun}) {
     return pw.Container(
       padding: const pw.EdgeInsets.all(8),
       decoration: pw.BoxDecoration(
@@ -398,6 +320,24 @@ class PdfService {
                   color: PdfColors.blue900,
                 ),
               ),
+              if (kmRun != null) ...[
+                pw.SizedBox(width: 16),
+                pw.Text(
+                  'KM Run: ',
+                  style: pw.TextStyle(
+                    fontSize: 9,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+                pw.Text(
+                  '$kmRun km',
+                  style: pw.TextStyle(
+                    fontSize: 9,
+                    fontWeight: pw.FontWeight.bold,
+                    color: PdfColors.blue900,
+                  ),
+                ),
+              ],
             ],
           ),
           pw.Text(
@@ -571,84 +511,99 @@ class PdfService {
     );
   }
 
-  // Build Totals Section
+  // Build Totals Section - Professional Right-Aligned Table
   static pw.Widget _buildTotalsSection(ServiceOrder order) {
-    // Calculate subtotals
-
     final grandTotal = order.totalCost;
+    final advancePaid = order.advancePaid;
+    final balanceAmount = grandTotal - advancePaid;
 
-    return pw.Column(
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.end,
       children: [
-        pw.SizedBox(height: 12),
-
-        // Grand Total Row
         pw.Container(
-          alignment: pw.Alignment.centerRight,
-          padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          width: 200,
           decoration: pw.BoxDecoration(
-            color: PdfColors.grey100,
-            borderRadius: pw.BorderRadius.circular(4),
+            border: pw.Border.all(color: PdfColors.grey400, width: 0.5),
           ),
-          child: pw.Row(
-            mainAxisSize: pw.MainAxisSize.min,
-            mainAxisAlignment: pw.MainAxisAlignment.end,
+          child: pw.Column(
             children: [
-              pw.Text(
-                'Grand Total (INR)',
-                style: pw.TextStyle(
-                  fontSize: 13,
-                  fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.blue900,
-                ),
+              // Grand Total Row
+              _buildTotalRow(
+                'Grand Total',
+                'Rs. ${grandTotal.toStringAsFixed(2)}',
+                isHeader: true,
               ),
-              pw.SizedBox(width: 10),
-              pw.Text(
-                grandTotal.toStringAsFixed(2),
-                style: pw.TextStyle(
-                  fontSize: 16,
-                  fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.blue900,
-                ),
+              // Advance Paid Row
+              _buildTotalRow(
+                'Advance Paid',
+                '(-) Rs. ${advancePaid.toStringAsFixed(2)}',
               ),
-            ],
-          ),
-        ),
-        pw.SizedBox(height: 6),
-
-        // Amount in Words
-        pw.Container(
-          width: double.infinity,
-          padding: const pw.EdgeInsets.all(10),
-          decoration: pw.BoxDecoration(
-            color: PdfColors.grey50,
-            borderRadius: pw.BorderRadius.circular(4),
-            border: pw.Border.all(color: PdfColors.grey300, width: 1),
-          ),
-          child: pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.end,
-            children: [
-              pw.Text(
-                'Amount in Words: ',
-                style: pw.TextStyle(
-                  fontSize: 9,
-                  fontWeight: pw.FontWeight.bold,
-                  color: PdfColors.grey800,
-                ),
-              ),
-              pw.Flexible(
-                child: pw.Text(
-                  _numberToWords(grandTotal),
-                  style: const pw.TextStyle(
-                    fontSize: 9,
-                    color: PdfColors.grey800,
-                  ),
-                  textAlign: pw.TextAlign.right,
-                ),
+              // Balance Due Row
+              _buildTotalRow(
+                balanceAmount > 0 ? 'Balance Due' : 'Paid in Full',
+                'Rs. ${balanceAmount.toStringAsFixed(2)}',
+                isHighlighted: true,
+                isPositive: balanceAmount <= 0,
               ),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  // Helper: Build Total Row
+  static pw.Widget _buildTotalRow(
+    String label,
+    String value, {
+    bool isHeader = false,
+    bool isHighlighted = false,
+    bool isPositive = false,
+  }) {
+    PdfColor bgColor = PdfColors.white;
+    PdfColor textColor = PdfColors.grey800;
+
+    if (isHeader) {
+      bgColor = PdfColors.grey200;
+      textColor = PdfColors.grey900;
+    } else if (isHighlighted) {
+      bgColor = isPositive ? PdfColors.green50 : PdfColors.grey100;
+      textColor = isPositive ? PdfColors.green800 : PdfColors.grey900;
+    }
+
+    return pw.Container(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: pw.BoxDecoration(
+        color: bgColor,
+        border: const pw.Border(
+          bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
+        ),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(
+            label,
+            style: pw.TextStyle(
+              fontSize: isHeader || isHighlighted ? 9 : 8,
+              fontWeight: isHeader || isHighlighted
+                  ? pw.FontWeight.bold
+                  : pw.FontWeight.normal,
+              color: textColor,
+            ),
+          ),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              fontSize: isHeader || isHighlighted ? 10 : 9,
+              fontWeight: isHeader || isHighlighted
+                  ? pw.FontWeight.bold
+                  : pw.FontWeight.normal,
+              color: textColor,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

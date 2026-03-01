@@ -37,6 +37,8 @@ mixin _$ServiceOrder {
       throw _privateConstructorUsedError; // New: labor items with individual costs
   double get partsCost => throw _privateConstructorUsedError;
   double get totalCost => throw _privateConstructorUsedError;
+  double get advancePaid => throw _privateConstructorUsedError;
+  int? get kmRun => throw _privateConstructorUsedError;
   String get status =>
       throw _privateConstructorUsedError; // 'pending', 'in_progress', 'completed', 'cancelled'
   DateTime? get createdAt => throw _privateConstructorUsedError;
@@ -74,6 +76,8 @@ abstract class $ServiceOrderCopyWith<$Res> {
       @PartItemListConverter() List<PartItem> laborItems,
       double partsCost,
       double totalCost,
+      double advancePaid,
+      int? kmRun,
       String status,
       DateTime? createdAt,
       DateTime? completedAt,
@@ -109,6 +113,8 @@ class _$ServiceOrderCopyWithImpl<$Res, $Val extends ServiceOrder>
     Object? laborItems = null,
     Object? partsCost = null,
     Object? totalCost = null,
+    Object? advancePaid = null,
+    Object? kmRun = freezed,
     Object? status = null,
     Object? createdAt = freezed,
     Object? completedAt = freezed,
@@ -162,6 +168,14 @@ class _$ServiceOrderCopyWithImpl<$Res, $Val extends ServiceOrder>
           ? _value.totalCost
           : totalCost // ignore: cast_nullable_to_non_nullable
               as double,
+      advancePaid: null == advancePaid
+          ? _value.advancePaid
+          : advancePaid // ignore: cast_nullable_to_non_nullable
+              as double,
+      kmRun: freezed == kmRun
+          ? _value.kmRun
+          : kmRun // ignore: cast_nullable_to_non_nullable
+              as int?,
       status: null == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
@@ -214,6 +228,8 @@ abstract class _$$ServiceOrderImplCopyWith<$Res>
       @PartItemListConverter() List<PartItem> laborItems,
       double partsCost,
       double totalCost,
+      double advancePaid,
+      int? kmRun,
       String status,
       DateTime? createdAt,
       DateTime? completedAt,
@@ -247,6 +263,8 @@ class __$$ServiceOrderImplCopyWithImpl<$Res>
     Object? laborItems = null,
     Object? partsCost = null,
     Object? totalCost = null,
+    Object? advancePaid = null,
+    Object? kmRun = freezed,
     Object? status = null,
     Object? createdAt = freezed,
     Object? completedAt = freezed,
@@ -300,6 +318,14 @@ class __$$ServiceOrderImplCopyWithImpl<$Res>
           ? _value.totalCost
           : totalCost // ignore: cast_nullable_to_non_nullable
               as double,
+      advancePaid: null == advancePaid
+          ? _value.advancePaid
+          : advancePaid // ignore: cast_nullable_to_non_nullable
+              as double,
+      kmRun: freezed == kmRun
+          ? _value.kmRun
+          : kmRun // ignore: cast_nullable_to_non_nullable
+              as int?,
       status: null == status
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
@@ -347,6 +373,8 @@ class _$ServiceOrderImpl implements _ServiceOrder {
       @PartItemListConverter() final List<PartItem> laborItems = const [],
       this.partsCost = 0.0,
       this.totalCost = 0.0,
+      this.advancePaid = 0.0,
+      this.kmRun,
       this.status = 'pending',
       this.createdAt,
       this.completedAt,
@@ -424,6 +452,11 @@ class _$ServiceOrderImpl implements _ServiceOrder {
   final double totalCost;
   @override
   @JsonKey()
+  final double advancePaid;
+  @override
+  final int? kmRun;
+  @override
+  @JsonKey()
   final String status;
 // 'pending', 'in_progress', 'completed', 'cancelled'
   @override
@@ -455,7 +488,7 @@ class _$ServiceOrderImpl implements _ServiceOrder {
 
   @override
   String toString() {
-    return 'ServiceOrder(id: $id, vehicleId: $vehicleId, customerId: $customerId, serviceType: $serviceType, description: $description, partsUsed: $partsUsed, parts: $parts, laborCost: $laborCost, laborItems: $laborItems, partsCost: $partsCost, totalCost: $totalCost, status: $status, createdAt: $createdAt, completedAt: $completedAt, beforePhotos: $beforePhotos, afterPhotos: $afterPhotos, notes: $notes, mechanicNotes: $mechanicNotes)';
+    return 'ServiceOrder(id: $id, vehicleId: $vehicleId, customerId: $customerId, serviceType: $serviceType, description: $description, partsUsed: $partsUsed, parts: $parts, laborCost: $laborCost, laborItems: $laborItems, partsCost: $partsCost, totalCost: $totalCost, advancePaid: $advancePaid, kmRun: $kmRun, status: $status, createdAt: $createdAt, completedAt: $completedAt, beforePhotos: $beforePhotos, afterPhotos: $afterPhotos, notes: $notes, mechanicNotes: $mechanicNotes)';
   }
 
   @override
@@ -483,6 +516,9 @@ class _$ServiceOrderImpl implements _ServiceOrder {
                 other.partsCost == partsCost) &&
             (identical(other.totalCost, totalCost) ||
                 other.totalCost == totalCost) &&
+            (identical(other.advancePaid, advancePaid) ||
+                other.advancePaid == advancePaid) &&
+            (identical(other.kmRun, kmRun) || other.kmRun == kmRun) &&
             (identical(other.status, status) || other.status == status) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
@@ -499,26 +535,29 @@ class _$ServiceOrderImpl implements _ServiceOrder {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
-      runtimeType,
-      id,
-      vehicleId,
-      customerId,
-      serviceType,
-      description,
-      const DeepCollectionEquality().hash(_partsUsed),
-      const DeepCollectionEquality().hash(_parts),
-      laborCost,
-      const DeepCollectionEquality().hash(_laborItems),
-      partsCost,
-      totalCost,
-      status,
-      createdAt,
-      completedAt,
-      const DeepCollectionEquality().hash(_beforePhotos),
-      const DeepCollectionEquality().hash(_afterPhotos),
-      notes,
-      mechanicNotes);
+  int get hashCode => Object.hashAll([
+        runtimeType,
+        id,
+        vehicleId,
+        customerId,
+        serviceType,
+        description,
+        const DeepCollectionEquality().hash(_partsUsed),
+        const DeepCollectionEquality().hash(_parts),
+        laborCost,
+        const DeepCollectionEquality().hash(_laborItems),
+        partsCost,
+        totalCost,
+        advancePaid,
+        kmRun,
+        status,
+        createdAt,
+        completedAt,
+        const DeepCollectionEquality().hash(_beforePhotos),
+        const DeepCollectionEquality().hash(_afterPhotos),
+        notes,
+        mechanicNotes
+      ]);
 
   /// Create a copy of ServiceOrder
   /// with the given fields replaced by the non-null parameter values.
@@ -549,6 +588,8 @@ abstract class _ServiceOrder implements ServiceOrder {
       @PartItemListConverter() final List<PartItem> laborItems,
       final double partsCost,
       final double totalCost,
+      final double advancePaid,
+      final int? kmRun,
       final String status,
       final DateTime? createdAt,
       final DateTime? completedAt,
@@ -584,6 +625,10 @@ abstract class _ServiceOrder implements ServiceOrder {
   double get partsCost;
   @override
   double get totalCost;
+  @override
+  double get advancePaid;
+  @override
+  int? get kmRun;
   @override
   String get status; // 'pending', 'in_progress', 'completed', 'cancelled'
   @override

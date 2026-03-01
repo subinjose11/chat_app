@@ -24,6 +24,8 @@ class ServiceOrder with _$ServiceOrder {
     List<PartItem> laborItems, // New: labor items with individual costs
     @Default(0.0) double partsCost,
     @Default(0.0) double totalCost,
+    @Default(0.0) double advancePaid,
+    int? kmRun,
     @Default('pending')
     String status, // 'pending', 'in_progress', 'completed', 'cancelled'
     DateTime? createdAt,

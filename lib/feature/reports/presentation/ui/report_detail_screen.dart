@@ -400,6 +400,9 @@ class _ReportDetailScreenState extends ConsumerState<ReportDetailScreen> {
                             vehicle?.numberPlate ?? 'N/A'),
                         _buildInfoRow(Icons.car_repair, 'Model',
                             '${vehicle?.make ?? ''} ${vehicle?.model ?? ''}'),
+                        if (currentOrder.kmRun != null)
+                          _buildInfoRow(Icons.speed, 'KM Run',
+                              '${currentOrder.kmRun} km'),
                       ],
                     );
                   },
@@ -493,22 +496,27 @@ class _ReportDetailScreenState extends ConsumerState<ReportDetailScreen> {
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.handyman,
-                                              size: 16,
-                                              color: AppColors.gray500),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            labor.name,
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color: isDark
-                                                  ? AppColors.gray300
-                                                  : AppColors.textSecondary,
+                                      Expanded(
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.handyman,
+                                                size: 16,
+                                                color: AppColors.gray500),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                labor.name,
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: isDark
+                                                      ? AppColors.gray300
+                                                      : AppColors.textSecondary,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                       Text(
                                         '₹${labor.cost.toStringAsFixed(2)}',
@@ -746,6 +754,112 @@ class _ReportDetailScreenState extends ConsumerState<ReportDetailScreen> {
                             ),
                           ),
                         ],
+                      ),
+
+                      // Advance Paid
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.payments_outlined,
+                                  size: 18, color: AppColors.success),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Advance Paid',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: isDark
+                                      ? AppColors.gray300
+                                      : AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            '₹${currentOrder.advancePaid.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.success,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      const Divider(),
+                      const SizedBox(height: 8),
+                      // Balance Amount
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: (currentOrder.totalCost -
+                                      currentOrder.advancePaid) >
+                                  0
+                              ? AppColors.warning.withOpacity(0.1)
+                              : AppColors.success.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: (currentOrder.totalCost -
+                                        currentOrder.advancePaid) >
+                                    0
+                                ? AppColors.warning.withOpacity(0.3)
+                                : AppColors.success.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  (currentOrder.totalCost -
+                                              currentOrder.advancePaid) >
+                                          0
+                                      ? Icons.account_balance_wallet_outlined
+                                      : Icons.check_circle_outline,
+                                  size: 20,
+                                  color: (currentOrder.totalCost -
+                                              currentOrder.advancePaid) >
+                                          0
+                                      ? AppColors.warning
+                                      : AppColors.success,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  (currentOrder.totalCost -
+                                              currentOrder.advancePaid) >
+                                          0
+                                      ? 'Balance Due'
+                                      : 'Fully Paid',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: (currentOrder.totalCost -
+                                                currentOrder.advancePaid) >
+                                            0
+                                        ? AppColors.warning
+                                        : AppColors.success,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              '₹${(currentOrder.totalCost - currentOrder.advancePaid).toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: (currentOrder.totalCost -
+                                            currentOrder.advancePaid) >
+                                        0
+                                    ? AppColors.warning
+                                    : AppColors.success,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),

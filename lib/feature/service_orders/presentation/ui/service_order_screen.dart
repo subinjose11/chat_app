@@ -33,6 +33,8 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
   final _partsUsedController = TextEditingController();
   final _partsCostController = TextEditingController();
   final _notesController = TextEditingController();
+  final _kmRunController = TextEditingController();
+  final _advancePaidController = TextEditingController();
 
   // Parts breakdown
   List<PartItem> _parts = [];
@@ -120,6 +122,9 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
       }
 
       _selectedWorkStatus = order.status;
+      _kmRunController.text = order.kmRun?.toString() ?? '';
+      _advancePaidController.text =
+          order.advancePaid > 0 ? order.advancePaid.toString() : '';
 
       // Load parts breakdown
       _parts = List<PartItem>.from(order.parts);
@@ -170,6 +175,14 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
 
   double get _totalLaborCost {
     return _laborItems.fold<double>(0, (sum, item) => sum + item.cost);
+  }
+
+  double get _advancePaid {
+    return double.tryParse(_advancePaidController.text) ?? 0.0;
+  }
+
+  double get _balanceAmount {
+    return _totalCost - _advancePaid;
   }
 
   void _addPart() {
@@ -324,6 +337,10 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
           laborItems: _laborItems, // New: labor items with individual costs
           partsCost: _totalPartsCost,
           totalCost: _totalCost,
+          advancePaid: _advancePaid,
+          kmRun: _kmRunController.text.isNotEmpty
+              ? int.tryParse(_kmRunController.text)
+              : null,
           vehicleId: vehicleId,
           customerId: customerId,
           status: _selectedWorkStatus,
@@ -878,6 +895,26 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                         }
                         return null;
                       },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // KM Run
+                    TextFormField(
+                      controller: _kmRunController,
+                      decoration: InputDecoration(
+                        labelText: 'KM Run',
+                        hintText: 'Current odometer reading',
+                        prefixIcon: const Icon(Icons.speed_outlined),
+                        suffixText: 'km',
+                        filled: true,
+                        fillColor: isDark
+                            ? AppColors.gray700.withOpacity(0.5)
+                            : AppColors.gray50,
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
                     ),
                   ],
                 ),
@@ -1728,6 +1765,110 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
                               ),
                             ],
                           ),
+                          const SizedBox(height: 16),
+
+                          // Advance Paid Input
+                          TextFormField(
+                            controller: _advancePaidController,
+                            decoration: InputDecoration(
+                              labelText: 'Advance Paid',
+                              hintText: '0.00',
+                              prefixIcon: const Icon(
+                                Icons.payments_outlined,
+                                color: AppColors.success,
+                              ),
+                              prefixText: '₹ ',
+                              filled: true,
+                              fillColor: isDark
+                                  ? AppColors.gray800
+                                  : AppColors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: isDark
+                                      ? AppColors.gray600
+                                      : AppColors.gray300,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: AppColors.success,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r'^\d*\.?\d{0,2}')),
+                            ],
+                            onChanged: (value) {
+                              setState(() {});
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Balance Amount Row
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: _balanceAmount > 0
+                                  ? AppColors.warning.withOpacity(0.1)
+                                  : AppColors.success.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: _balanceAmount > 0
+                                    ? AppColors.warning.withOpacity(0.3)
+                                    : AppColors.success.withOpacity(0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      _balanceAmount > 0
+                                          ? Icons.account_balance_wallet_outlined
+                                          : Icons.check_circle_outline,
+                                      size: 20,
+                                      color: _balanceAmount > 0
+                                          ? AppColors.warning
+                                          : AppColors.success,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _balanceAmount > 0
+                                          ? 'Balance Due'
+                                          : 'Fully Paid',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        color: _balanceAmount > 0
+                                            ? AppColors.warning
+                                            : AppColors.success,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Text(
+                                  '₹${_balanceAmount.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: _balanceAmount > 0
+                                        ? AppColors.warning
+                                        : AppColors.success,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1844,6 +1985,8 @@ class _ServiceOrderScreenState extends ConsumerState<ServiceOrderScreen> {
     _partsUsedController.dispose();
     _partsCostController.dispose();
     _notesController.dispose();
+    _kmRunController.dispose();
+    _advancePaidController.dispose();
     _customServiceTypeController.dispose();
     _partNameController.dispose();
     _partCostController.dispose();

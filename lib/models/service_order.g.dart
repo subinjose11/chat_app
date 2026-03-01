@@ -26,6 +26,8 @@ _$ServiceOrderImpl _$$ServiceOrderImplFromJson(Map<String, dynamic> json) =>
           : const PartItemListConverter().fromJson(json['laborItems'] as List?),
       partsCost: (json['partsCost'] as num?)?.toDouble() ?? 0.0,
       totalCost: (json['totalCost'] as num?)?.toDouble() ?? 0.0,
+      advancePaid: (json['advancePaid'] as num?)?.toDouble() ?? 0.0,
+      kmRun: (json['kmRun'] as num?)?.toInt(),
       status: json['status'] as String? ?? 'pending',
       createdAt: json['createdAt'] == null
           ? null
@@ -58,6 +60,8 @@ Map<String, dynamic> _$$ServiceOrderImplToJson(_$ServiceOrderImpl instance) =>
       'laborItems': const PartItemListConverter().toJson(instance.laborItems),
       'partsCost': instance.partsCost,
       'totalCost': instance.totalCost,
+      'advancePaid': instance.advancePaid,
+      'kmRun': instance.kmRun,
       'status': instance.status,
       'createdAt': instance.createdAt?.toIso8601String(),
       'completedAt': instance.completedAt?.toIso8601String(),
